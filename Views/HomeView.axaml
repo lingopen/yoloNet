@@ -1,0 +1,70 @@
+<UserControl
+    x:Class="yoloNet.HomeView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:yoloNet.ViewModels"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:HomeViewModel"
+    mc:Ignorable="d">
+    <Design.DataContext>
+        <vm:HomeViewModel />
+    </Design.DataContext>
+    <Grid RowDefinitions="auto,*">
+        <StackPanel Margin="5" Orientation="Horizontal">
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ShowCommand}"
+                CommandParameter="1"
+                Content="1.抽帧"
+                Foreground="White" />
+            <TextBlock
+                Margin="5"
+                VerticalAlignment="Center"
+                Foreground="Gray"
+                Text=">" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ShowCommand}"
+                CommandParameter="2"
+                Content="2.标注"
+                Foreground="White" />
+            <TextBlock
+                Margin="5"
+                VerticalAlignment="Center"
+                Foreground="Gray"
+                Text=">" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ShowCommand}"
+                CommandParameter="3"
+                Content="3.训练"
+                Foreground="White" />
+            <TextBlock
+                Margin="5"
+                VerticalAlignment="Center"
+                Foreground="Gray"
+                Text=">" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ShowCommand}"
+                CommandParameter="4"
+                Content="4.推理"
+                Foreground="White" />
+        </StackPanel>
+        <ContentControl
+            Grid.Row="1"
+            Margin="5"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch"
+            Content="{Binding UserContent, TargetNullValue='欢迎使用yoloNet！', FallbackValue='欢迎使用yoloNet！'}" />
+    </Grid>
+</UserControl>

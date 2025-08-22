@@ -1,0 +1,147 @@
+<UserControl
+    x:Class="yoloNet.MarkView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ctl="clr-namespace:yoloNet.Controls"
+    xmlns:cvt="using:yoloNet.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:yoloNet.ViewModels"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:MarkViewModel"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <cvt:RunningConverter x:Key="cvtRunState" />
+        <cvt:RunningColorConverter x:Key="cvtRunColor" />
+
+
+    </UserControl.Resources>
+    <Design.DataContext>
+        <vm:MarkViewModel />
+    </Design.DataContext>
+
+    <Grid Background="Black" RowDefinitions="*,auto,auto">
+        <Border
+            Margin="2"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            BorderBrush="Gray"
+            BorderThickness="1">
+            <ctl:AnnotatedCanvas
+                x:Name="ImageCanvas"
+                Width="{Binding ImageWidth}"
+                Height="{Binding ImageHeight}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                PointerMoved="OnCanvasMoved"
+                PointerPressed="OnCanvasPressed"
+                PointerReleased="OnCanvasReleased" />
+        </Border>
+
+        <!--  底部控制区  -->
+        <StackPanel
+            Grid.Row="1"
+            Margin="0,5,0,5"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="10">
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding PrevImageCommand}"
+                CommandParameter="0"
+                Content="&#xe64d;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding PrevImageCommand}"
+                CommandParameter="1"
+                Content="&#xe67a;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding NextImageCommand}"
+                CommandParameter="1"
+                Content="&#xe67b;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding NextImageCommand}"
+                CommandParameter="0"
+                Content="&#xe653;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+            <ComboBox
+                Width="150"
+                FontSize="24"
+                ItemsSource="{Binding Classes}"
+                SelectedItem="{Binding SelectedClass}" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding SaveAnnotationCommand}"
+                Content="&#xebe7;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding UndoAnnotationCommand}"
+                Content="&#xec0c;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+        </StackPanel>
+
+        <!--  状态栏区域  -->
+        <Grid Grid.Row="2" ColumnDefinitions="*">
+            <StackPanel
+                Margin="5"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    FontStyle="Oblique"
+                    Foreground="Gold"
+                    Text="{Binding ImageWidth, StringFormat='宽度:{0}'},FallbackValue='宽度:1920'" />
+                <TextBlock
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    FontStyle="Oblique"
+                    Foreground="Gold"
+                    Text="{Binding ImageHeight, StringFormat='高度:{0}'},FallbackValue='高度:1080'" />
+                <TextBlock
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    FontStyle="Oblique"
+                    Foreground="Gold"
+                    Text="{Binding CurrentIndex, StringFormat='图片索引:{0}'}" />
+                <TextBlock
+                    Margin="10,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    FontStyle="Oblique"
+                    Foreground="Gold"
+                    Text="{Binding Msg}" />
+
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,64 @@
+<Window
+    x:Class="yoloNet.MessageBox"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="root"
+    Title="MessageBox"
+    Width="300"
+    Height="150"
+    d:DesignHeight="150"
+    d:DesignWidth="300"
+    Background="Transparent"
+    CanResize="False"
+    Icon="/Assets/avalonia-logo.ico"
+    ShowInTaskbar="False"
+    SystemDecorations="None"
+    WindowStartupLocation="CenterOwner"
+    WindowState="Normal"
+    mc:Ignorable="d">
+    <Border
+        Padding="5"
+        Background="White"
+        BorderBrush="Gold"
+        BorderThickness="1"
+        CornerRadius="8"
+        PointerPressed="Border_PointerPressed">
+        <Grid
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            RowDefinitions="*,auto">
+            <TextBlock
+                x:Name="txtMsg"
+                Margin="5"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontSize="24" />
+            <StackPanel
+                Grid.Row="1"
+                Margin="5"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <Button
+                    Width="100"
+                    HorizontalAlignment="Center"
+                    HorizontalContentAlignment="Center"
+                    Background="#0d6efd"
+                    Click="Ok_Click"
+                    Content="确  定"
+                    FontSize="24"
+                    Foreground="White" />
+                <!--<Button
+                    Margin="15,0,0,0"
+                    HorizontalAlignment="Center"
+                    Background="#ef5350"
+                    Click="Cancel_Click"
+                    Content="取消"
+                    FontSize="24"
+                    Foreground="White" />-->
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

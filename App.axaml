@@ -1,0 +1,15 @@
+<Application
+    x:Class="yoloNet.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedThemeVariant="Default">
+    <!--  "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options.  -->
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+    <Application.Resources>
+        <!--  注册字体  -->
+        <FontFamily x:Key="iconfont">avares://yoloNet/Assets/Fonts/iconfont.ttf#iconfont</FontFamily>
+    </Application.Resources>
+</Application>
