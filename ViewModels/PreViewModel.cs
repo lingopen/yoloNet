@@ -130,7 +130,7 @@ public partial class PreViewModel : ObservableObject
     }
 
 
-    async Task CaptureLoop(CancellationToken token)
+    void CaptureLoop(CancellationToken token)
     {
         DateTime lastFpsTime = DateTime.Now;
         var now = DateTime.Now;
@@ -169,6 +169,7 @@ public partial class PreViewModel : ObservableObject
         while (!token.IsCancellationRequested)
         {
             if (_yolo == null || _canvas == null) continue;
+            onnxFrameCounter++;
             lock (frameLock)
             {
                 if (latestFrame.IsEmpty) continue;
@@ -215,7 +216,7 @@ public partial class PreViewModel : ObservableObject
                 CvInvoke.PutText(displayFrame, box.Label, new System.Drawing.Point((int)box.X1, (int)box.Y1 - 5),
                     FontFace.HersheySimplex, 0.5, new MCvScalar(255, 255, 255));
             }
-            onnxFrameCounter++;
+            
             // FPS 计算 
             now = DateTime.Now;
             var span = now - lastFpsTime;
