@@ -124,10 +124,12 @@ namespace yoloNet.ViewModels
             _frame = _capture?.QueryFrame()?.ToImage<Bgr, byte>();
             if (_frame != null && _bitmap != null && _canvas != null)
             {
+                //✅ 刷新WriteableBitmap
+                _frame.ConvertToWriteableBitmap(_bitmap);
                 // ✅ UI 显示，尽量轻量
                 Dispatcher.UIThread.Post(() =>
-                {
-                    _frame.ConvertToWriteableBitmap(_bitmap, _canvas);//刷新UI
+                { 
+                    _canvas?.InvalidateVisual();//刷新UI
                 });
                 // ✅ 抽帧保存放到后台线程
                 if (Interval > 0)

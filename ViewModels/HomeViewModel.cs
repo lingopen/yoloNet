@@ -35,6 +35,7 @@ namespace yoloNet.ViewModels
                     case "4":
                         UserContent = App.ServiceProvider?.GetRequiredService<PreView>();
                         break;
+                    
                 }
             }
             catch (Exception ex)

@@ -57,6 +57,7 @@
                 CommandParameter="4"
                 Content="4.推理"
                 Foreground="White" />
+          
         </StackPanel>
         <ContentControl
             Grid.Row="1"

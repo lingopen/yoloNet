@@ -24,11 +24,10 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Emgu.CV" Version="4.11.0.5746" />
-    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.11.0.5746" />
-	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
-	<PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.22.1" />
-	<PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.22.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\yoloNetDnn\yoloNet.core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

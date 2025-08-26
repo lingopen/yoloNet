@@ -1,24 +1,19 @@
 ﻿using System;
-using System.ComponentModel.Design;
 using System.IO;
-using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.Reg;
 using Emgu.CV.Structure;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace yoloNet.Extentions
 {
     public static class MatExtensions
     {
         // 将Emgu.CV的Mat转换为Avalonia的Bitmap
-        public static void ConvertToWriteableBitmap(this Image<Bgr, byte> image, WriteableBitmap? writeableBitmap, Canvas canvas)
+        public static void ConvertToWriteableBitmap(this Image<Bgr, byte> image,  WriteableBitmap? writeableBitmap)
         {
             if (image == null || image.Data == null || image.Bytes == null) return;
 
@@ -26,38 +21,42 @@ namespace yoloNet.Extentions
             int height = image.Height;
             byte[] data = image.Bytes;
 
-            if (writeableBitmap == null || writeableBitmap.PixelSize.Width != width || writeableBitmap.PixelSize.Height != height)
+            //if (writeableBitmap == null || writeableBitmap.PixelSize.Width != width || writeableBitmap.PixelSize.Height != height)
+            //{
+            //    writeableBitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+            //    canvas.Width = width;
+            //    canvas.Height = height;
+            //    canvas.Background = new ImageBrush { Source = writeableBitmap };
+            //}
+            if (writeableBitmap != null)
             {
-                writeableBitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
-                canvas.Background = new ImageBrush { Source = writeableBitmap };
-            }
-
-            using (var buffer = writeableBitmap.Lock())
-            {
-                int rowBytes = buffer.RowBytes;
-                IntPtr bufferPtr = buffer.Address;
-
-                unsafe
+                using (var buffer = writeableBitmap.Lock())
                 {
-                    for (int y = 0; y < height; y++)
+                    int rowBytes = buffer.RowBytes;
+                    IntPtr bufferPtr = buffer.Address;
+
+                    unsafe
                     {
-                        byte* row = (byte*)IntPtr.Add(bufferPtr, y * rowBytes);
-                        for (int x = 0; x < width; x++)
+                        for (int y = 0; y < height; y++)
                         {
-                            int pixelIndex = (y * width + x) * 3; // 正确索引
-                            byte b = data[pixelIndex];
-                            byte g = data[pixelIndex + 1];
-                            byte r = data[pixelIndex + 2];
-                            row[x * 4] = b;
-                            row[x * 4 + 1] = g;
-                            row[x * 4 + 2] = r;
-                            row[x * 4 + 3] = 255;
+                            byte* row = (byte*)IntPtr.Add(bufferPtr, y * rowBytes);
+                            for (int x = 0; x < width; x++)
+                            {
+                                int pixelIndex = (y * width + x) * 3; // 正确索引
+                                byte b = data[pixelIndex];
+                                byte g = data[pixelIndex + 1];
+                                byte r = data[pixelIndex + 2];
+                                row[x * 4] = b;
+                                row[x * 4 + 1] = g;
+                                row[x * 4 + 2] = r;
+                                row[x * 4 + 3] = 255;
+                            }
                         }
                     }
                 }
-            }
 
-            canvas.InvalidateVisual();
+                //canvas.InvalidateVisual();
+            }
         }
 
         public static void SaveFrame(this Image<Bgr, byte> image, int index)

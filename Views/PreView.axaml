@@ -111,33 +111,21 @@
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
-                <TextBlock
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    FontStyle="Oblique"
-                    Foreground="Gold"
-                    Text="{Binding Width, StringFormat='宽度:{0}'},FallbackValue='宽度:1920'" />
+
                 <TextBlock
                     Margin="5,0,0,0"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Center"
                     FontStyle="Oblique"
                     Foreground="Gold"
-                    Text="{Binding Height, StringFormat='高度:{0}'},FallbackValue='高度:1080'" />
+                    Text="{Binding Fps, StringFormat='相机帧率:{0}'},FallbackValue='帧率:25'" />
                 <TextBlock
                     Margin="5,0,0,0"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Center"
                     FontStyle="Oblique"
                     Foreground="Gold"
-                    Text="{Binding Fps, StringFormat='帧率:{0}'},FallbackValue='帧率:25'" />
-                <TextBlock
-                    Margin="5,0,0,0"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    FontStyle="Oblique"
-                    Foreground="Gold"
-                    Text="{Binding FrameCounter, StringFormat='帧号:{0}'},FallbackValue='帧号:200'" />
+                    Text="{Binding OnnxFps, StringFormat='推理帧率:{0}'},FallbackValue='帧率:25'" />
             </StackPanel>
         </Grid>
     </Grid>
