@@ -182,28 +182,28 @@ public partial class PreViewModel : ObservableObject
             {
                 isInferencing = true;
                 var tensor = _yolo.MatToTensor(displayFrame);
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("images", tensor) };
-                        using var results = _session.Run(inputs);
-                        var boxes = _yolo.ParseOnnxOutput(results);
-                        lastBoxes = boxes;
-                    }
-                    catch (System.ExecutionEngineException ex)
-                    {
-                        Console.WriteLine($"推理异常: {ex.Message}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"推理异常: {ex.Message}");
-                    }
-                    finally
-                    {
-                        isInferencing = false;
-                    }
-                });
+                _ = Task.Run(() =>
+                 {
+                     try
+                     {
+                         var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("images", tensor) };
+                         using var results = _session.Run(inputs);
+                         var boxes = _yolo.ParseOnnxOutput(results);
+                         lastBoxes = boxes;
+                     }
+                     catch (System.ExecutionEngineException ex)
+                     {
+                         Console.WriteLine($"推理异常: {ex.Message}");
+                     }
+                     catch (Exception ex)
+                     {
+                         Console.WriteLine($"推理异常: {ex.Message}");
+                     }
+                     finally
+                     {
+                         isInferencing = false;
+                     }
+                 });
             }
 
             // 绘制结果
