@@ -147,7 +147,7 @@ public partial class PreViewModel : ObservableObject
         if (!string.IsNullOrEmpty(OnnxPath)) //加载模型 
             _session = new InferenceSession(OnnxPath);
         // 后台线程抓帧
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             while (!token.IsCancellationRequested)
             {
