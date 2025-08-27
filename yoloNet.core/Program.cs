@@ -13,6 +13,7 @@ class Program
         var onnxPath = Path.Combine(AppContext.BaseDirectory, "best.onnx");
         YoloService yolo = new YoloService(rtspUrl,onnxPath);
         yolo.Start();
+        
         yolo.Stop();
     }
     

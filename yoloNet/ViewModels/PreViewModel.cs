@@ -144,8 +144,24 @@ public partial class PreViewModel : ObservableObject
         List<DetectedBox> lastBoxes = new List<DetectedBox>();
 
         InferenceSession? _session = null;
-        if (!string.IsNullOrEmpty(OnnxPath)) //加载模型 
-            _session = new InferenceSession(OnnxPath);
+        if (!string.IsNullOrEmpty(OnnxPath)) //加载模型
+        {
+
+            var options = new SessionOptions();
+            try
+            {
+                options.AppendExecutionProvider_CUDA(0);
+                //options.LogSeverityLevel =  OrtLoggingLevel.ORT_LOGGING_LEVEL_INFO; // 打印详细信息
+                Console.WriteLine("CUDA Execution Provider added successfully.");
+            }
+            catch (OnnxRuntimeException ex)
+            {
+                Console.WriteLine("CUDA Execution Provider failed: " + ex.Message);
+                Console.WriteLine("Fallback to CPU.");
+            }
+            // 创建 InferenceSession
+            _session = new InferenceSession(OnnxPath, options);
+        }
         // 后台线程抓帧
         _ = Task.Run(() =>
         {

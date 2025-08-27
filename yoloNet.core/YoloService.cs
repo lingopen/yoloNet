@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
-using System.Drawing;
-using Emgu.CV;
+﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Drawing;
 
 namespace yoloNet.core
 {
@@ -29,7 +30,7 @@ namespace yoloNet.core
         {
             this.rtspUrl = rtspUrl;
             this.onnxPath = onnxPath;
-           
+
         }
 
         /// <summary>
@@ -46,7 +47,6 @@ namespace yoloNet.core
             displayFrame?.Dispose();
             capture?.Dispose();
         }
-        
 
         /// <summary>
         /// 采集图像并推理
@@ -68,7 +68,7 @@ namespace yoloNet.core
             Debug.WriteLine($"Video: {width}x{height}");
 
             object frameLock = new object();
-           
+
             List<DetectedBox> lastBoxes = new List<DetectedBox>();
             bool isInferencing = false;
 
@@ -77,7 +77,23 @@ namespace yoloNet.core
 
             cts = new CancellationTokenSource();
             if (!string.IsNullOrEmpty(onnxPath)) //加载模型
-                session = new InferenceSession(onnxPath);
+            {
+
+                var options = new SessionOptions();
+                try
+                {
+                    options.AppendExecutionProvider_CUDA(0);
+                    //options.LogSeverityLevel =  OrtLoggingLevel.ORT_LOGGING_LEVEL_INFO; // 打印详细信息
+                    Console.WriteLine("CUDA Execution Provider added successfully.");
+                }
+                catch (OnnxRuntimeException ex)
+                {
+                    Console.WriteLine("CUDA Execution Provider failed: " + ex.Message);
+                    Console.WriteLine("Fallback to CPU.");
+                }
+                // 创建 InferenceSession
+                session = new InferenceSession(onnxPath, options);
+            }
             // 后台线程抓帧
             Task.Run(() =>
             {
@@ -91,11 +107,11 @@ namespace yoloNet.core
                             latestFrame?.Dispose();
                             latestFrame = frame.Clone();
                             realFrameCounter++;
-                        }
+                        } 
                     }
                 }
             }, cts.Token);
-             
+
 
             while (cts != null && !cts.IsCancellationRequested)
             {
@@ -147,7 +163,6 @@ namespace yoloNet.core
                 }
 
                 // FPS 计算
-
                 var now = DateTime.Now;
                 var span = now - lastFpsTime;
                 string fps = "0";
@@ -165,13 +180,12 @@ namespace yoloNet.core
                 int key = CvInvoke.WaitKey(1);
                 if (key == 27) // ESC
                 {
-
                     // 停止推理，释放资源
                     break;
                 }
             }
         }
-        public Image<Bgr, byte> Letterbox(Image<Bgr, byte> src )
+        public Image<Bgr, byte> Letterbox(Image<Bgr, byte> src)
         {
             int w = src.Width;
             int h = src.Height;
@@ -189,6 +203,48 @@ namespace yoloNet.core
             resized.CopyTo(output.GetSubRect(new Rectangle(x, y, newW, newH)));
             return output;
         }
+
+        public Tensor<float> MatToTensorGPU(Image<Bgr, byte> src)
+        {
+            // Letterbox Resize
+            int w = src.Width;
+            int h = src.Height;
+            int newW = w;
+            int newH = w;
+
+            double scale = Math.Min((double)newW / w, (double)newH / h);
+            int resizeW = (int)(w * scale);
+            int resizeH = (int)(h * scale);
+
+            var resized = new Image<Bgr, byte>(resizeW, resizeH);
+            CvInvoke.Resize(src, resized, new Size(resizeW, resizeH), 0, 0, Inter.Linear);
+
+            var output = new Image<Bgr, byte>(newW, newH, new Bgr(0, 0, 0));
+            int x = (newW - resizeW) / 2;
+            int y = (newH - resizeH) / 2;
+            resized.CopyTo(output.GetSubRect(new Rectangle(x, y, resizeW, resizeH)));
+            resized.Dispose();
+
+            // 转 Tensor
+            var tensor = new DenseTensor<float>(new[] { 1, 3, newH, newW });
+            var data = output.Data; // [h, w, 3]
+
+            // 并行处理每个通道
+            Parallel.For(0, newH, row =>
+            {
+                for (int col = 0; col < newW; col++)
+                {
+                    tensor[0, 0, row, col] = data[row, col, 2] / 255f; // R
+                    tensor[0, 1, row, col] = data[row, col, 1] / 255f; // G
+                    tensor[0, 2, row, col] = data[row, col, 0] / 255f; // B
+                }
+            });
+
+            output.Dispose();
+            return tensor;
+        }
+
+
         public Tensor<float> MatToTensor(Image<Bgr, byte> mat)
         {
             int h = mat.Height;
