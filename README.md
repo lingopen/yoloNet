@@ -3,9 +3,59 @@
 
 ### 2.标注
 <img width="1426" height="752" alt="image" src="https://github.com/user-attachments/assets/0b62011c-1b1d-4019-a6a0-7239a1a5e182" />
+标注后，自动在更目录生成dataset数据集，照片位置在：dataset\images\train
 
 ### 3.训练
 <img width="1426" height="752" alt="image" src="https://github.com/user-attachments/assets/327b29e2-86a5-4c58-a437-425d75599be3" />
+1.保存data.yaml,自动生成：dataset\data.yaml
+
+2.保存train_yolo.py,自动生成：程序根目录
+
+3.下载并安装python到程序根目录:
+
+<img width="828" height="525" alt="image" src="https://github.com/user-attachments/assets/61c9b801-ae26-4a6d-a433-505351c121cb" />
+
+4.使用CMD进入目录
+
+```bash
+cd D:\yoloNet\yoloNet\bin\Debug\net9.0\python
+```
+
+5.安装pip
+
+5.1 下载 get-pip.py：
+
+浏览器访问 https://bootstrap.pypa.io/get-pip.py
+
+保存到 D:\yoloNet\yoloNet\bin\Debug\net9.0\python
+
+5.2 执行安装：
+
+```bash
+python.exe get-pip.py
+```
+
+5.3 修改_path文件，在python文件夹找到：python311._pth 最后一行添加，否则识别不到pip:
+```
+Lib\site-packages
+```
+
+<img width="740" height="272" alt="image" src="https://github.com/user-attachments/assets/fdd9fcff-e253-4886-9a4e-bb5839240788" />
+
+5.4 验证pip
+```bash
+python.exe -m pip --version
+```
+
+6.安装 PyTorch
+
+```bash
+#CPU 训练：
+python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+#GPU 训练：CUDA 12.2
+python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
+
+```
 
 ### 4.推理
 <img width="1920" height="1017" alt="image" src="https://github.com/user-attachments/assets/5019e567-6955-4edd-800e-1cbeaa909341" />
