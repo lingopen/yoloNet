@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
-using Avalonia;
-using Avalonia.Media.Imaging;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using yoloNet.Models;
 
 namespace yoloNet.ViewModels
@@ -44,6 +45,14 @@ namespace yoloNet.ViewModels
 
         public MarkViewModel()
         {
+            LoadAllImage();
+            CurrentIndex = 0;
+            LoadCurrentImage();
+
+            SelectedClass = Classes[0];
+        }
+        void LoadAllImage()
+        {
             string folder = Path.Combine("dataset", "images", "train");
             // 获取文件并按帧号排序
             _imageFiles = Directory.Exists(folder)
@@ -56,15 +65,11 @@ namespace yoloNet.ViewModels
                           })
                           .ToArray()
                 : Array.Empty<string>();
-
-            CurrentIndex = 0;
-            LoadCurrentImage();
-
-            SelectedClass = Classes[0];
         }
-
         private void LoadCurrentImage()
         {
+            if (CurrentIndex == 0)//返回第一张先刷新一下
+                LoadAllImage();
             if (_imageFiles.Length == 0) return;
             CurrentImage = new Bitmap(_imageFiles[CurrentIndex]);
             Annotations.Clear();
@@ -83,7 +88,7 @@ namespace yoloNet.ViewModels
             if (_imageFiles.Length == 0) return;
             int istep = int.Parse(step);
             if (istep == 0)
-                CurrentIndex = _imageFiles.Length-1;
+                CurrentIndex = _imageFiles.Length - 1;
             else
                 CurrentIndex = (CurrentIndex + istep) % _imageFiles.Length;
             LoadCurrentImage();

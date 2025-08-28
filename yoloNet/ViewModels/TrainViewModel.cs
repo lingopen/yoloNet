@@ -39,6 +39,10 @@ namespace yoloNet.ViewModels
         private void SaveYaml()
         {
             string path = Path.Combine("dataset", "data.yaml");
+            if (!Directory.Exists(@"dataset"))
+            {
+                Directory.CreateDirectory(@"dataset");
+            }
             File.WriteAllText(path, YamlContent);
             Log += "已保存 data.yaml\n";
         }
@@ -66,20 +70,24 @@ namespace yoloNet.ViewModels
         private void StartTraining()
         {
             if (_trainProcess != null && !_trainProcess.HasExited) return;
-            var pythonExe = Path.Combine(AppContext.BaseDirectory, "python", "python.exe");
+
+            // 这里直接指定虚拟环境 python.exe
+            var venvPython = Path.Combine(AppContext.BaseDirectory, "yolov11_env", "Scripts", "python.exe");
+
             var psi = new ProcessStartInfo
             {
-                FileName = pythonExe,
-                Arguments = "train_yolo.py",
+                FileName = venvPython,
+                Arguments = "train_yolo.py",   // 注意：这里是脚本相对路径，如果不在同目录，改成绝对路径
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.GetEncoding("GB2312"),
-                StandardErrorEncoding = Encoding.GetEncoding("GB2312")
+                StandardOutputEncoding = Encoding.UTF8, // 🔑 关键
+                StandardErrorEncoding = Encoding.UTF8   // 🔑 关键
             };
 
             _trainProcess = new Process { StartInfo = psi, EnableRaisingEvents = true };
+
             _trainProcess.OutputDataReceived += (s, e) =>
             {
                 if (!string.IsNullOrEmpty(e.Data))
@@ -88,15 +96,18 @@ namespace yoloNet.ViewModels
                     Log += line + "\n";
                 }
             };
+
             _trainProcess.ErrorDataReceived += (s, e) =>
             {
                 if (!string.IsNullOrEmpty(e.Data)) Log += e.Data + "\n";
             };
+
             _trainProcess.Exited += (s, e) => Log += "训练结束\n";
 
             _trainProcess.Start();
             _trainProcess.BeginOutputReadLine();
             _trainProcess.BeginErrorReadLine();
+
         }
 
         [RelayCommand]

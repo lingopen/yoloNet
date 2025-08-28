@@ -54,6 +54,7 @@ namespace yoloNet.ViewModels
                     _capture.Stop();
                     _capture.ImageGrabbed -= _capture_ImageGrabbed;
                 }
+                System.Threading.Thread.Sleep(200);//休眠200ms
                 _capture?.Dispose();
                 _capture = null;
                 _frame?.Dispose();
@@ -62,7 +63,23 @@ namespace yoloNet.ViewModels
             }
             if (_canvas == null) return;
             FrameCounter = 0;
-            _capture = new VideoCapture(rtspUrl, VideoCapture.API.Ffmpeg);
+            if (rtspUrl.StartsWith("rtsp"))
+                _capture = new VideoCapture(rtspUrl, VideoCapture.API.Ffmpeg);
+            else if (!string.IsNullOrEmpty(rtspUrl))
+            {
+                try
+                {
+                    var index = int.Parse(rtspUrl);
+                    _capture = new VideoCapture(index);
+                }
+                catch (Exception)
+                {
+
+                    return;
+                }
+               
+            }
+            else return;
             //_capture = new VideoCapture(0);
             if (!_capture.IsOpened)
             {

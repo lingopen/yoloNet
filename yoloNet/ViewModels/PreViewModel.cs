@@ -100,7 +100,23 @@ public partial class PreViewModel : ObservableObject
             IsRunning = false;
             return;
         }
-        _capture = new VideoCapture(rtspUrl, VideoCapture.API.Ffmpeg);
+        if (rtspUrl.StartsWith("rtsp"))
+            _capture = new VideoCapture(rtspUrl, VideoCapture.API.Ffmpeg);
+        else if (!string.IsNullOrEmpty(rtspUrl))
+        {
+            try
+            {
+                var index = int.Parse(rtspUrl);
+                _capture = new VideoCapture(index);
+            }
+            catch (Exception)
+            {
+
+                return;
+            }
+
+        }
+        else return;
         if (!_capture.IsOpened)
         {
             Debug.WriteLine("无法打开 RTSP 流");

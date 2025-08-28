@@ -35,7 +35,7 @@
                     VerticalAlignment="Center"
                     FontStyle="Oblique"
                     Foreground="Gold"
-                    Text="RTSP地址：" />
+                    Text="RTSP或摄像头索引：" />
                 <TextBox
                     x:Name="rtspAdd"
                     FontSize="24"
