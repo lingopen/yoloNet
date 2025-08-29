@@ -4,8 +4,10 @@ using Emgu.CV.Structure;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using System.Collections.Concurrent;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 namespace yoloNet.core
 {
@@ -51,12 +53,24 @@ namespace yoloNet.core
         /// <summary>
         /// 采集图像并推理
         /// </summary>
-        /// <param name="rtspUrl"></param>
-        /// <param name="onnxPath"></param>
-        /// <param name="action"></param>
         public void Start()
         {
-            capture = new VideoCapture(rtspUrl, VideoCapture.API.Ffmpeg);
+            if (!string.IsNullOrEmpty(rtspUrl) && rtspUrl.StartsWith("rtsp"))
+                capture = new VideoCapture(rtspUrl, VideoCapture.API.Ffmpeg);
+            else if (!string.IsNullOrEmpty(rtspUrl))
+            {
+                try
+                {
+                    var index = int.Parse(rtspUrl);
+                    capture = new VideoCapture(index);
+                }
+                catch (Exception)
+                {
+                    return;
+                }
+
+            }
+            else return;
             if (!capture.IsOpened)
             {
                 Debug.WriteLine("无法打开 RTSP 流");
@@ -107,7 +121,7 @@ namespace yoloNet.core
                             latestFrame?.Dispose();
                             latestFrame = frame.Clone();
                             realFrameCounter++;
-                        } 
+                        }
                     }
                 }
             }, cts.Token);
@@ -185,6 +199,7 @@ namespace yoloNet.core
                 }
             }
         }
+       
         public Image<Bgr, byte> Letterbox(Image<Bgr, byte> src)
         {
             int w = src.Width;

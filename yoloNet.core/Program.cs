@@ -9,7 +9,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        var rtspUrl = "rtsp://admin:@192.168.31.143:554/live/0/SUB";
+        var rtspUrl = "1";// "rtsp://admin:@192.168.31.143:554/live/0/SUB";
         var onnxPath = Path.Combine(AppContext.BaseDirectory, "best.onnx");
         YoloService yolo = new YoloService(rtspUrl,onnxPath);
         yolo.Start();
