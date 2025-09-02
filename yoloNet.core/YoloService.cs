@@ -3,8 +3,6 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
-using System.Collections.Concurrent;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Drawing;
 using System.Text.RegularExpressions;
@@ -62,7 +60,10 @@ namespace yoloNet.core
                 try
                 {
                     var index = int.Parse(rtspUrl);
-                    capture = new VideoCapture(index);
+                    capture = new VideoCapture(index, VideoCapture.API.DShow);
+                    capture.Set(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
+                    capture.Set(CapProp.FrameWidth, 1280);
+                    capture.Set(CapProp.FrameHeight, 720);
                 }
                 catch (Exception)
                 {
@@ -367,6 +368,57 @@ namespace yoloNet.core
         public void Dispose()
         {
             Stop();
+        }
+
+
+        public  Rectangle? Detect(  Image<Bgr, byte>? src, string? onnxPath)
+        {
+            if (string.IsNullOrEmpty(onnxPath) || src == null) return null;
+            InferenceSession? _session = null;
+            if (!string.IsNullOrEmpty(onnxPath)) //加载模型
+            {
+                var options = new SessionOptions();
+                try
+                {
+                    options.AppendExecutionProvider_CUDA(0);
+                    //options.LogSeverityLevel =  OrtLoggingLevel.ORT_LOGGING_LEVEL_INFO; // 打印详细信息
+                    Console.WriteLine("CUDA Execution Provider added successfully.");
+                }
+                catch (OnnxRuntimeException ex)
+                {
+                    Console.WriteLine("CUDA Execution Provider failed: " + ex.Message);
+                    Console.WriteLine("Fallback to CPU.");
+                }
+                // 创建 InferenceSession
+                _session = new InferenceSession(onnxPath, options);
+
+            }
+            if (_session == null) return null;
+            using var displayFrame = Letterbox(src);
+            if (displayFrame == null) return null;
+
+            var tensor = MatToTensor(displayFrame);
+            List<DetectedBox>? lastBoxes = null;
+            try
+            {
+                var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("images", tensor) };
+                using var results = _session.Run(inputs);
+                var boxes = ParseOnnxOutput(results);
+                lastBoxes = boxes;
+            }
+            catch (System.ExecutionEngineException ex)
+            {
+                Console.WriteLine($"推理异常: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"推理异常: {ex.Message}");
+                return null;
+            }
+            if (lastBoxes == null || !lastBoxes.Any()) return null;
+            var box = lastBoxes.OrderByDescending(b => b.Score).First();
+            return new Rectangle((int)box.X1, (int)box.Y1, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1));
         }
     }
     public class DetectedBox

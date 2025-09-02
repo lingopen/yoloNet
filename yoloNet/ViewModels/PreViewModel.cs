@@ -107,7 +107,10 @@ public partial class PreViewModel : ObservableObject
             try
             {
                 var index = int.Parse(rtspUrl);
-                _capture = new VideoCapture(index);
+                _capture = new VideoCapture(index, VideoCapture.API.DShow);
+                _capture.Set(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
+                _capture.Set(CapProp.FrameWidth, 1280);
+                _capture.Set(CapProp.FrameHeight, 720);
             }
             catch (Exception)
             {

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -11,6 +9,9 @@ using CommunityToolkit.Mvvm.Input;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using yoloNet.Extentions;
 
 namespace yoloNet.ViewModels
@@ -70,14 +71,17 @@ namespace yoloNet.ViewModels
                 try
                 {
                     var index = int.Parse(rtspUrl);
-                    _capture = new VideoCapture(index);
+                    _capture = new VideoCapture(index, VideoCapture.API.DShow);
+                    _capture.Set(CapProp.FourCC, VideoWriter.Fourcc('M', 'J', 'P', 'G'));
+                    _capture.Set(CapProp.FrameWidth, 1280);
+                    _capture.Set(CapProp.FrameHeight, 720);
                 }
                 catch (Exception)
                 {
 
                     return;
                 }
-               
+
             }
             else return;
             //_capture = new VideoCapture(0);
@@ -145,7 +149,7 @@ namespace yoloNet.ViewModels
                 _frame.ConvertToWriteableBitmap(_bitmap);
                 // ✅ UI 显示，尽量轻量
                 Dispatcher.UIThread.Post(() =>
-                { 
+                {
                     _canvas?.InvalidateVisual();//刷新UI
                 });
                 // ✅ 抽帧保存放到后台线程
