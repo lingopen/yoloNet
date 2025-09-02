@@ -136,9 +136,9 @@ public partial class PreViewModel : ObservableObject
             Debug.WriteLine("Canvas对象为空");
             return;
         }
-        _bitmap = new WriteableBitmap(new PixelSize(width, width), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+        _bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
         _canvas.Width = width;
-        _canvas.Height = width;
+        _canvas.Height = height;
         _canvas.Background = new ImageBrush { Source = _bitmap };
 
 
@@ -159,9 +159,11 @@ public partial class PreViewModel : ObservableObject
         Mat latestFrame = new Mat();
         Mat _frame = new Mat();
         Image<Bgr, byte>? displayFrame = null;
+        Image<Bgr, byte>? copyFrame = null;
         bool isInferencing = false;
         List<DetectedBox> lastBoxes = new List<DetectedBox>();
-
+        double scale = 1;
+        int offset_x = 0, offset_y = 0;
         InferenceSession? _session = null;
         if (!string.IsNullOrEmpty(OnnxPath)) //加载模型
         {
@@ -210,14 +212,15 @@ public partial class PreViewModel : ObservableObject
                 if (latestFrame.IsEmpty) continue;
 
                 displayFrame?.Dispose();
-                displayFrame = _yolo.Letterbox(latestFrame.ToImage<Bgr, byte>());
+                displayFrame = latestFrame.ToImage<Bgr, byte>();
+                copyFrame = _yolo.Letterbox(latestFrame.ToImage<Bgr, byte>(), out scale, out offset_x, out offset_y);
             }
 
             // 异步推理
-            if (_session != null && displayFrame != null && !isInferencing)
+            if (_session != null && copyFrame != null && !isInferencing)
             {
                 isInferencing = true;
-                var tensor = _yolo.MatToTensor(displayFrame);
+                var tensor = _yolo.MatToTensor(copyFrame);
                 _ = Task.Run(() =>
                  {
 #pragma warning disable CS0618 // 类型或成员已过时
@@ -239,6 +242,7 @@ public partial class PreViewModel : ObservableObject
                      finally
                      {
                          isInferencing = false;
+                         copyFrame?.Dispose(); 
                      }
 #pragma warning restore CS0618 // 类型或成员已过时
                  });
@@ -248,12 +252,12 @@ public partial class PreViewModel : ObservableObject
             foreach (var box in lastBoxes)
             {
                 CvInvoke.Rectangle(displayFrame,
-                    new Rectangle((int)box.X1, (int)box.Y1, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1)),
+                    new Rectangle((int)box.X1 - offset_x, (int)box.Y1 - offset_y, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1)),
                     new MCvScalar(0, 0, 255), 2);
-                CvInvoke.PutText(displayFrame, box.Label, new System.Drawing.Point((int)box.X1, (int)box.Y1 - 5),
+                CvInvoke.PutText(displayFrame, box.Label, new System.Drawing.Point((int)box.X1 - offset_x, (int)box.Y1 - offset_y - 5),
                     FontFace.HersheySimplex, 0.5, new MCvScalar(255, 255, 255));
             }
-            
+
             // FPS 计算 
             now = DateTime.Now;
             var span = now - lastFpsTime;

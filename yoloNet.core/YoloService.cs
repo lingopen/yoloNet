@@ -20,6 +20,7 @@ namespace yoloNet.core
         CancellationTokenSource? cts;
         Mat frame = new Mat();
         Mat latestFrame = new Mat();
+        Image<Bgr, byte>? copyFrame;
         Image<Bgr, byte>? displayFrame;
         VideoCapture? capture;
         InferenceSession? session;
@@ -109,6 +110,7 @@ namespace yoloNet.core
                 // 创建 InferenceSession
                 session = new InferenceSession(onnxPath, options);
             }
+
             // 后台线程抓帧
             Task.Run(() =>
             {
@@ -126,8 +128,8 @@ namespace yoloNet.core
                     }
                 }
             }, cts.Token);
-
-
+            double scale = 1;int x = 0;int y = 0;
+            string fps = "0";
             while (cts != null && !cts.IsCancellationRequested)
             {
                 lock (frameLock)
@@ -135,14 +137,15 @@ namespace yoloNet.core
                     if (latestFrame.IsEmpty) continue;
 
                     displayFrame?.Dispose();
-                    displayFrame = Letterbox(latestFrame.ToImage<Bgr, byte>());
+                    displayFrame = latestFrame.ToImage<Bgr, byte>();
+                    copyFrame = Letterbox(displayFrame,out scale,out x,out y); 
                 }
 
                 // 异步推理
-                if (session != null && displayFrame != null && !isInferencing)
+                if (session != null && copyFrame != null && !isInferencing)
                 {
                     isInferencing = true;
-                    var tensor = MatToTensor(displayFrame);
+                    var tensor = MatToTensor(copyFrame);
                     Task.Run(() =>
                     {
 #pragma warning disable CS0618 // 类型或成员已过时
@@ -164,6 +167,7 @@ namespace yoloNet.core
                         finally
                         {
                             isInferencing = false;
+                            copyFrame?.Dispose(); copyFrame = null;
                         }
 #pragma warning restore CS0618 // 类型或成员已过时
                     });
@@ -173,24 +177,26 @@ namespace yoloNet.core
                 foreach (var box in lastBoxes)
                 {
                     CvInvoke.Rectangle(displayFrame,
-                        new Rectangle((int)box.X1, (int)box.Y1, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1)),
+                        new Rectangle((int)box.X1-x, (int)box.Y1-y, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1)),
                         new MCvScalar(0, 0, 255), 2);
-                    CvInvoke.PutText(displayFrame, box.Label, new Point((int)box.X1, (int)box.Y1 - 5),
+                    CvInvoke.PutText(displayFrame, box.Label, new Point((int)box.X1-x, (int)box.Y1 -y - 5),
                         FontFace.HersheySimplex, 0.5, new MCvScalar(255, 255, 255));
                 }
 
                 // FPS 计算
                 var now = DateTime.Now;
                 var span = now - lastFpsTime;
-                string fps = "0";
+                
                 if (span.TotalMilliseconds >= 1000)
                 {
-                    fps = $"{realFrameCounter / span.TotalSeconds:F2}";
-                    Console.Title = $"FPS: {fps}";
+                    fps = $"FPS: {realFrameCounter / span.TotalSeconds:F2}";
+                    Console.Title = fps;
                     realFrameCounter = 0;
                     lastFpsTime = now;
                 }
-
+                CvInvoke.PutText(displayFrame, fps,
+                   new Point(10, 30),
+                   FontFace.HersheySimplex, 1.0, new MCvScalar(0, 255, 0), 2);
                 // 显示
 
                 CvInvoke.Imshow("YOLOv11 RTSP", displayFrame);
@@ -202,7 +208,7 @@ namespace yoloNet.core
                 }
             }
         }
-       
+
         public Image<Bgr, byte> Letterbox(Image<Bgr, byte> src)
         {
             int w = src.Width;
@@ -218,6 +224,25 @@ namespace yoloNet.core
 
             int x = (targetW - newW) / 2;
             int y = (targetH - newH) / 2;
+            resized.CopyTo(output.GetSubRect(new Rectangle(x, y, newW, newH)));
+            return output;
+        }
+
+        public Image<Bgr, byte> Letterbox(Image<Bgr, byte> src, out double scale, out int x, out int y)
+        {
+            int w = src.Width;
+            int h = src.Height;
+            int targetW = w;
+            int targetH = w;//正方形
+            scale = Math.Min((double)targetW / w, (double)targetH / h);
+            int newW = (int)(w * scale);
+            int newH = (int)(h * scale);
+
+            var resized = src.Resize(newW, newH, Inter.Linear);
+            var output = new Image<Bgr, byte>(targetW, targetH, new Bgr(0, 0, 0));
+
+            x = (targetW - newW) / 2;
+            y = (targetH - newH) / 2;
             resized.CopyTo(output.GetSubRect(new Rectangle(x, y, newW, newH)));
             return output;
         }
@@ -373,7 +398,7 @@ namespace yoloNet.core
         }
 
 
-        public  Rectangle? Detect(  Image<Bgr, byte>? src, string? onnxPath)
+        public Rectangle? Detect(Image<Bgr, byte>? src, string? onnxPath)
         {
             if (string.IsNullOrEmpty(onnxPath) || src == null) return null;
             InferenceSession? _session = null;

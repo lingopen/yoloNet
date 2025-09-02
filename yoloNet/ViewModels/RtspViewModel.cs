@@ -19,7 +19,7 @@ namespace yoloNet.ViewModels
     public partial class RtspViewModel : ViewModelBase
     {
         [ObservableProperty]
-        double _fps;
+        string? _fps;
         /// <summary>
         /// 抽帧 每N帧保存一次
         /// </summary>
@@ -93,7 +93,7 @@ namespace yoloNet.ViewModels
 
             Width = (int)_capture.Get(CapProp.FrameWidth);
             Height = (int)_capture.Get(CapProp.FrameHeight);
-            Fps = _capture.Get(CapProp.Fps);
+            
             _canvas.Width = Width; //调整画布大小
             _canvas.Height = Height;//调整画布大小 
             if (_bitmap != null)
@@ -138,13 +138,25 @@ namespace yoloNet.ViewModels
         }
 
         private Image<Bgr, byte>? _frame;
-
+        DateTime now = DateTime.Now, lastFpsTime=DateTime.Now;
+        int realFrameCounter = 0;
         private void _capture_ImageGrabbed(object? sender, EventArgs e)
         {
             if (_capture == null) return;
             _frame = _capture?.QueryFrame()?.ToImage<Bgr, byte>();
             if (_frame != null && _bitmap != null && _canvas != null)
             {
+                realFrameCounter++;
+                // FPS 计算 
+                now = DateTime.Now;
+                var span = now - lastFpsTime;
+                if (span.TotalMilliseconds >= 1000)
+                {
+                    Fps = $"{realFrameCounter / span.TotalSeconds:F2}"; 
+                    realFrameCounter = 0; 
+                    lastFpsTime = now;
+                }
+
                 //✅ 刷新WriteableBitmap
                 _frame.ConvertToWriteableBitmap(_bitmap);
                 // ✅ UI 显示，尽量轻量
