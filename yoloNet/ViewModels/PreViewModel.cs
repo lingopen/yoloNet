@@ -220,6 +220,7 @@ public partial class PreViewModel : ObservableObject
                 var tensor = _yolo.MatToTensor(displayFrame);
                 _ = Task.Run(() =>
                  {
+#pragma warning disable CS0618 // 类型或成员已过时
                      try
                      {
                          var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("images", tensor) };
@@ -239,6 +240,7 @@ public partial class PreViewModel : ObservableObject
                      {
                          isInferencing = false;
                      }
+#pragma warning restore CS0618 // 类型或成员已过时
                  });
             }
 

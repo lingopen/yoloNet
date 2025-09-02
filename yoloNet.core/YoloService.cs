@@ -145,6 +145,7 @@ namespace yoloNet.core
                     var tensor = MatToTensor(displayFrame);
                     Task.Run(() =>
                     {
+#pragma warning disable CS0618 // 类型或成员已过时
                         try
                         {
                             var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("images", tensor) };
@@ -164,6 +165,7 @@ namespace yoloNet.core
                         {
                             isInferencing = false;
                         }
+#pragma warning restore CS0618 // 类型或成员已过时
                     });
                 }
 
@@ -399,6 +401,7 @@ namespace yoloNet.core
 
             var tensor = MatToTensor(displayFrame);
             List<DetectedBox>? lastBoxes = null;
+#pragma warning disable CS0618 // 类型或成员已过时
             try
             {
                 var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("images", tensor) };
@@ -416,6 +419,7 @@ namespace yoloNet.core
                 Console.WriteLine($"推理异常: {ex.Message}");
                 return null;
             }
+#pragma warning restore CS0618 // 类型或成员已过时
             if (lastBoxes == null || !lastBoxes.Any()) return null;
             var box = lastBoxes.OrderByDescending(b => b.Score).First();
             return new Rectangle((int)box.X1, (int)box.Y1, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1));

@@ -11,7 +11,6 @@ namespace yoloNet;
 public partial class TrainView : UserControl
 {
     private readonly TrainViewModel? _vm;
-    private Point? _startPoint;
 
     public TrainView()
     {
