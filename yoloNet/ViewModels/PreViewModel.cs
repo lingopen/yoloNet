@@ -206,7 +206,7 @@ public partial class PreViewModel : ObservableObject
         while (!token.IsCancellationRequested)
         {
             if (_yolo == null || _canvas == null) continue;
-            onnxFrameCounter++;
+            
             lock (frameLock)
             {
                 if (latestFrame.IsEmpty) continue;
@@ -220,6 +220,7 @@ public partial class PreViewModel : ObservableObject
             if (_session != null && copyFrame != null && !isInferencing)
             {
                 isInferencing = true;
+                onnxFrameCounter++;
                 var tensor = _yolo.MatToTensor(copyFrame);
                 _ = Task.Run(() =>
                  {

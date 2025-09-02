@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yoloNet.core", "yoloNet.cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yoloNet", "yoloNet\yoloNet.csproj", "{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yoloNet.demo", "yoloNet.demo\yoloNet.demo.csproj", "{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Release|x64.ActiveCfg = Release|x64
 		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Release|x64.Build.0 = Release|x64
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|x64.Build.0 = Debug|Any CPU
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|x64.ActiveCfg = Release|Any CPU
+		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
