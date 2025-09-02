@@ -89,6 +89,7 @@ namespace yoloNet.core
             bool isInferencing = false;
 
             int realFrameCounter = 0;
+            int onnxFrameCounter = 0;
             DateTime lastFpsTime = DateTime.Now;
 
             cts = new CancellationTokenSource();
@@ -128,7 +129,7 @@ namespace yoloNet.core
                     }
                 }
             }, cts.Token);
-            double scale = 1;int x = 0;int y = 0;
+            double scale = 1; int x = 0; int y = 0;
             string fps = "0";
             while (cts != null && !cts.IsCancellationRequested)
             {
@@ -138,12 +139,13 @@ namespace yoloNet.core
 
                     displayFrame?.Dispose();
                     displayFrame = latestFrame.ToImage<Bgr, byte>();
-                    copyFrame = Letterbox(displayFrame,out scale,out x,out y); 
+                    copyFrame = Letterbox(displayFrame, out scale, out x, out y);
                 }
 
                 // 异步推理
                 if (session != null && copyFrame != null && !isInferencing)
                 {
+                    onnxFrameCounter++;
                     isInferencing = true;
                     var tensor = MatToTensor(copyFrame);
                     Task.Run(() =>
@@ -177,21 +179,23 @@ namespace yoloNet.core
                 foreach (var box in lastBoxes)
                 {
                     CvInvoke.Rectangle(displayFrame,
-                        new Rectangle((int)box.X1-x, (int)box.Y1-y, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1)),
+                        new Rectangle((int)box.X1 - x, (int)box.Y1 - y, (int)(box.X2 - box.X1), (int)(box.Y2 - box.Y1)),
                         new MCvScalar(0, 0, 255), 2);
-                    CvInvoke.PutText(displayFrame, box.Label, new Point((int)box.X1-x, (int)box.Y1 -y - 5),
+                    CvInvoke.PutText(displayFrame, box.Label, new Point((int)box.X1 - x, (int)box.Y1 - y - 5),
                         FontFace.HersheySimplex, 0.5, new MCvScalar(255, 255, 255));
                 }
 
                 // FPS 计算
                 var now = DateTime.Now;
                 var span = now - lastFpsTime;
-                
+
                 if (span.TotalMilliseconds >= 1000)
                 {
-                    fps = $"FPS: {realFrameCounter / span.TotalSeconds:F2}";
+                    fps = $"FPS: {realFrameCounter / span.TotalSeconds:F2},DNN: {onnxFrameCounter / span.TotalSeconds:F2}";
+
                     Console.Title = fps;
                     realFrameCounter = 0;
+                    onnxFrameCounter = 0;
                     lastFpsTime = now;
                 }
                 CvInvoke.PutText(displayFrame, fps,
