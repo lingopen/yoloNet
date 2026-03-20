@@ -1,0 +1,29 @@
+﻿<UserControl
+x:Class="yoloNetv2.Controls.MessageTip"
+xmlns="https://github.com/avaloniaui"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+x:Name="root"
+d:DesignHeight="450"
+d:DesignWidth="800"    mc:Ignorable="d">
+	<Grid>
+		<Border
+		Padding="10"
+		HorizontalAlignment="Center"
+		VerticalAlignment="Center"
+		Background="{Binding #root.TextBackgound}"
+		CornerRadius="5"
+		IsHitTestVisible="True"
+		ZIndex="2000"> 
+			<TextBlock
+			Margin="40" 
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center"
+			FontSize="32"
+			Foreground="{Binding #root.TextColor}"
+			Text="{Binding #root.Text}" />
+
+		</Border>
+	</Grid>
+</UserControl>
