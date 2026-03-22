@@ -49,7 +49,7 @@ namespace yoloNetv2.ViewModels
 
             SelectedClass = Classes[0];
         }
-        void LoadAllImage()
+        public void LoadAllImage()
         {
             string folder = Path.Combine("dataset", "images", "train");
             // 获取文件并按帧号排序
@@ -64,11 +64,11 @@ namespace yoloNetv2.ViewModels
                           .ToArray()
                 : Array.Empty<string>();
         }
-        private void LoadCurrentImage()
+        public void LoadCurrentImage()
         {
             if (CurrentIndex == 0)//返回第一张先刷新一下
                 LoadAllImage();
-            if (_imageFiles.Length == 0) return;
+            if (_imageFiles == null || _imageFiles.Length == 0) return;
             CurrentImage = new Bitmap(_imageFiles[CurrentIndex]);
             Annotations.Clear();
             TempRect = null;
@@ -83,7 +83,7 @@ namespace yoloNetv2.ViewModels
         [RelayCommand]
         private void NextImage(string step)
         {
-            if (_imageFiles.Length == 0) return;
+            if (_imageFiles == null || _imageFiles.Length == 0) return;
             int istep = int.Parse(step);
             if (istep == 0)
                 CurrentIndex = _imageFiles.Length - 1;
@@ -95,7 +95,7 @@ namespace yoloNetv2.ViewModels
         [RelayCommand]
         private void PrevImage(string step)
         {
-            if (_imageFiles.Length == 0) return;
+            if (_imageFiles == null || _imageFiles.Length == 0) return;
             int istep = int.Parse(step);
             if (istep == 0)
                 CurrentIndex = 0;
@@ -106,7 +106,7 @@ namespace yoloNetv2.ViewModels
         [RelayCommand]
         private void SaveAnnotation()
         {
-            if (_imageFiles.Length == 0 || CurrentImage == null) return;
+            if (_imageFiles == null || _imageFiles.Length == 0 || CurrentImage == null) return;
 
             string imgPath = _imageFiles[CurrentIndex];
             string labelFolder = Path.Combine("dataset", "labels", "train");

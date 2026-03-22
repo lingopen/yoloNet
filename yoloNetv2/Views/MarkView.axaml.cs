@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Microsoft.Extensions.DependencyInjection;
 using yoloNetv2.Controls;
 using yoloNetv2.ViewModels;
@@ -21,7 +22,7 @@ public partial class MarkView : UserControl
 
         if (ImageCanvas is AnnotatedCanvas canvas)
         {
-            canvas.ViewModel = _vm; 
+            canvas.ViewModel = _vm;
         }
         // ?? 绑定刷新事件
         _vm.RequestInvalidate = () => ImageCanvas.InvalidateVisual();
@@ -80,5 +81,15 @@ public partial class MarkView : UserControl
             _vm.TempRect = new Rect(_startPoint.Value, pos);
             ImageCanvas.InvalidateVisual();
         }
+    }
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        if (_vm != null)
+        {
+            _vm.LoadAllImage();
+            _vm.CurrentIndex = 0;
+            _vm.LoadCurrentImage();
+        }
+        base.OnLoaded(e);
     }
 }
