@@ -109,11 +109,12 @@ namespace yoloNetv2.Controls
                 image = bufferScope.Buffer.ReferImage();
                 sourceBitmap = SKBitmap.Decode(image);
                 // 🔹 初始化显示缓存（WriteableBitmap + pixelBuffer）
-                if (_bitmap == null || _bitmap.PixelSize.Width != width)
+                if (_bitmap == null || _bitmap.PixelSize.Width != width|| _bitmap.PixelSize.Height != height)
                 {
-                    _bitmap?.Dispose();
+                    //_bitmap?.Dispose(); 这里临时去掉，多次切换页面，会造成负载
                     _bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888);
                     _pixelBuffer = new byte[width * height * 4];
+                     
                 }
 
                 // 🔹 读取像素数据到 _pixelBuffer

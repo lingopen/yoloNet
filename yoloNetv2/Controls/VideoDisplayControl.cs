@@ -33,12 +33,13 @@ namespace yoloNetv2.Controls
         {
             base.Render(context);
 
-            if (VideoFrame != null)
+            if (VideoFrame != null )
             {
                 // 视频帧缩放到控件大小
                 Rect destRect = new Rect(0, 0, Bounds.Width, Bounds.Height);
-                Rect srcRect = new Rect(0, 0, VideoFrame.PixelSize.Width, VideoFrame.PixelSize.Height);
-                context.DrawImage(VideoFrame, srcRect, destRect);
+                //Rect srcRect = new Rect(0, 0, VideoFrame.PixelSize.Width, VideoFrame.PixelSize.Height);
+                //context.DrawImage(VideoFrame, srcRect, destRect);
+                context.DrawImage(VideoFrame, destRect);
             }
 
             // 绘制框和文字
