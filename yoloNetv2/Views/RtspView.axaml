@@ -8,104 +8,20 @@ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 xmlns:vm="clr-namespace:yoloNetv2.ViewModels"
 xmlns:ctl="using:yoloNetv2.Controls"
 d:DesignHeight="450"
-d:DesignWidth="800"
+d:DesignWidth="800" Background="Black" 
 x:DataType="vm:RtspViewModel"
 mc:Ignorable="d">
 	<UserControl.Resources>
 		<cvt:RunningConverter x:Key="cvtRunState" />
-		<cvt:RunningColorConverter x:Key="cvtRunColor" />
-
-
+		<cvt:RunningColorConverter x:Key="cvtRunColor" /> 
 	</UserControl.Resources>
 	<Design.DataContext>
 		<vm:RtspViewModel />
-	</Design.DataContext>
-
-
-	<Grid Background="Black">
-		<Grid.RowDefinitions>
-			<RowDefinition Height="auto" />
-			<RowDefinition Height="*" />
-			<RowDefinition Height="auto" />
-		</Grid.RowDefinitions>
-
-		<!--  操作栏区域  -->
-		<Grid ColumnDefinitions="*,auto,auto,auto">
-			<StackPanel Margin="5" VerticalAlignment="Center">
-				<TextBlock
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="摄像头：" />
-				<ComboBox x:Name="rtspAdd" FontSize="24" ItemsSource="{Binding Devices}" HorizontalAlignment="Stretch"/>
-				 
-			</StackPanel>
-			<StackPanel Grid.Column="1" Margin="5">
-				<TextBlock
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="抽帧间隔：" />
-				<NumericUpDown
-				FontSize="24"
-				Increment="1"
-				Value="{Binding Interval}" />
-			</StackPanel>
-			<StackPanel
-			Grid.Column="2"
-			Margin="5"
-			VerticalAlignment="Center">
-				<TextBlock
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="启动/停止：" />
-				<Button
-				Width="100"
-				Height="41"
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				HorizontalContentAlignment="Center"
-				VerticalContentAlignment="Center"
-				Background="{Binding IsRunning, Converter={StaticResource cvtRunColor}, ConverterParameter='1'}"
-				Command="{Binding StartCommand}"
-				CommandParameter="{Binding #rtspAdd.SelectedIndex}"
-				Content="{Binding IsRunning, Converter={StaticResource cvtRunState}, FallbackValue='\ue750'}"
-				FontFamily="{StaticResource iconfont}"
-				FontSize="24"
-				Foreground="White" />
-			</StackPanel>
-			<StackPanel
-			Grid.Column="3"
-			Margin="5"
-			VerticalAlignment="Center">
-				<TextBlock
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="清空训练图片：" />
-				<Button
-				Width="100"
-				Height="41"
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				HorizontalContentAlignment="Center"
-				VerticalContentAlignment="Center"
-				Background="#ef5350"
-				Command="{Binding ClearCommand}"
-				Content="&#xec08;"
-				FontFamily="{StaticResource iconfont}"
-				FontSize="24"
-				Foreground="White" />
-			</StackPanel>
-		</Grid>
+	</Design.DataContext> 
+	<!--  操作栏区域  -->
+	<Grid ColumnDefinitions="3*,*">
 		<!--  显示视频的区域  -->
 		<Border
-		Grid.Row="1"
 		Margin="2"
 		HorizontalAlignment="Center"
 		VerticalAlignment="Center"
@@ -116,45 +32,76 @@ mc:Ignorable="d">
 			VerticalAlignment="Center"
 			/>
 		</Border>
-
-		<!--  状态栏区域  -->
-		<Grid Grid.Row="2" ColumnDefinitions="*">
-			<StackPanel
-			Margin="5"
+		<StackPanel  VerticalAlignment="Center" Margin="5" Grid.Column="1">
+			<TextBlock Margin="0,5,0,0"
 			HorizontalAlignment="Stretch"
 			VerticalAlignment="Center"
-			Orientation="Horizontal">
-				<TextBlock
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="{Binding Width, StringFormat='宽度:{0}',FallbackValue='宽度:640'}" />
-				<TextBlock
-				Margin="5,0,0,0"
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="{Binding Height, StringFormat='高度:{0}',FallbackValue='高度:480'}" />
-				<!--<TextBlock
-				Margin="5,0,0,0"
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="{Binding Fps, StringFormat='帧率:{0}',FallbackValue='帧率:25'}" />
-				<TextBlock
-				Margin="5,0,0,0"
-				HorizontalAlignment="Stretch"
-				VerticalAlignment="Center"
-				FontStyle="Oblique"
-				Foreground="Gold"
-				Text="{Binding FrameCounter, StringFormat='帧号:{0}',FallbackValue='帧号:200'}" />-->
-			</StackPanel>
-		</Grid>
+			FontStyle="Oblique"
+			Foreground="Gold"
+			Text="摄像头：" />
+			<ComboBox x:Name="rtspAdd" SelectedIndex="{Binding DevicesIndex}" FontSize="24" ItemsSource="{Binding Devices}" HorizontalAlignment="Stretch"/>
+
+			<TextBlock Margin="0,5,0,0"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Center"
+			FontStyle="Oblique"
+			Foreground="Gold"
+			Text="分辨率：" />
+			<ComboBox FontSize="24" SelectedIndex="{Binding CharacterIndex}" ItemsSource="{Binding Characters}" HorizontalAlignment="Stretch"/>
+
+			<TextBlock Margin="0,5,0,0"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Center"
+			FontStyle="Oblique"
+			Foreground="Gold"
+			Text="抽帧间隔：" />
+			<NumericUpDown
+			FontSize="24"
+			Increment="1"
+			Value="{Binding Interval}" />
+
+			<TextBlock Margin="0,5,0,0"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Center"
+			FontStyle="Oblique"
+			Foreground="Gold"
+			Text="启动/停止：" />
+			<Button
+			Width="100"
+			Height="41"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Center"
+			HorizontalContentAlignment="Center"
+			VerticalContentAlignment="Center"
+			Background="{Binding IsRunning, Converter={StaticResource cvtRunColor}, ConverterParameter='1'}"
+			Command="{Binding StartCommand}"
+			Content="{Binding IsRunning, Converter={StaticResource cvtRunState}, FallbackValue='\ue750'}"
+			FontFamily="{StaticResource iconfont}"
+			FontSize="24"
+			Foreground="White" />
+
+			<TextBlock Margin="0,5,0,0"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Center"
+			FontStyle="Oblique"
+			Foreground="Gold"
+			Text="清空图片：" />
+			<Button
+			Width="100"
+			Height="41"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Center"
+			HorizontalContentAlignment="Center"
+			VerticalContentAlignment="Center"
+			Background="#ef5350"
+			Command="{Binding ClearCommand}"
+			Content="&#xec08;"
+			FontFamily="{StaticResource iconfont}"
+			FontSize="24"
+			Foreground="White" />
+		</StackPanel>
+
 		<ctl:MessageTip
-		Grid.Row="1"
 		Margin="15,0,15,0"
 		IsVisible="{Binding IsShowTip}"
 		Text="{Binding TipMsg}"

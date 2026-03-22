@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,15 +15,15 @@ public partial class PreView : UserControl
     {
         InitializeComponent();
 
-         
+
         _vm = App.ServiceProvider?.GetRequiredService<PreViewModel>();
         this.DataContext = _vm;
-    } 
-    protected override void OnInitialized()
+    }
+    protected override async void OnLoaded(RoutedEventArgs e)
     {
         VideoHelper.UICanvas = this.canvas;
         if (_vm != null)
-            _vm.OnInit();
-        base.OnInitialized();
-    }
+            await _vm.OnInit();
+        base.OnLoaded(e);
+    } 
 }

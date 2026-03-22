@@ -14,11 +14,11 @@ namespace yoloNetv2.ViewModels
 {
     public partial class MarkViewModel : ViewModelBase
     {
-        private string[] _imageFiles;
+        private string[]? _imageFiles;
         [ObservableProperty]
         int _currentIndex;
         [ObservableProperty]
-        string msg = "就绪";
+        string? msg = "就绪";
         [ObservableProperty]
         private Bitmap? currentImage;
         /// <summary>
@@ -33,9 +33,7 @@ namespace yoloNetv2.ViewModels
 
         public ObservableCollection<string> Classes { get; } = new()
         {
-            "normal",   // 正常状态
-            "alarm",     // 报警状态
-            "occlusion"    // 遮挡状态
+            "normal",
         };
 
         public ObservableCollection<Annotation> Annotations { get; } = new();

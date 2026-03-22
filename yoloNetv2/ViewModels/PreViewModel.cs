@@ -15,18 +15,39 @@ public partial class PreViewModel : ViewModelBase
     [ObservableProperty] private bool _isRunning = false;
     [ObservableProperty]
     ObservableCollection<string>? _devices = new ObservableCollection<string>();
+    [ObservableProperty]
+    int _devicesIndex = 0;
 
+    [ObservableProperty]
+    ObservableCollection<string>? _characters = new ObservableCollection<string>();
 
-    public void OnInit()
+    [ObservableProperty]
+    int _characterIndex = 0;
+
+    partial void OnDevicesIndexChanged(int value)
     {
+        if (value < 0) return;
+        var list = VideoHelper.GetDevices();
+        var characteristics = list[value].Characteristics;
+        Characters?.Clear();
+        foreach (var item in characteristics)
+        {
+            Characters!.Add(item.ToString());
+        }
+    }
+
+    public async Task OnInit()
+    {
+        await VideoHelper.UnInit();
         var list = VideoHelper.GetDevices();
         Devices?.Clear();
         foreach (var item in list)
         {
             Devices!.Add($"{item.Description}");
         }
+        DevicesIndex = 0;
+        OnDevicesIndexChanged(0);
     }
-
 
 
     [RelayCommand]
@@ -56,7 +77,7 @@ public partial class PreViewModel : ViewModelBase
 
 
     [RelayCommand]
-    public async Task Start(int index)
+    public async Task Start()
     {
         if (string.IsNullOrEmpty(OnnxPath))
         {
@@ -77,7 +98,7 @@ public partial class PreViewModel : ViewModelBase
         }
         try
         {
-            VideoHelper.Init(index);
+            await VideoHelper.Init(DevicesIndex, CharacterIndex);
         }
         catch (Exception)
         {

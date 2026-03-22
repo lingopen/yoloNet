@@ -68,7 +68,7 @@ namespace yoloNetv2.Controls
             {
 
                 var formattedText = new FormattedText(
-                 $"FPS: {Fps:F1} {(SaveCount > 0 ? "抽取 " + SaveCount + " 张" : "")} {(string.IsNullOrEmpty(DetectScore) ? "" : "得分: " + DetectScore)}",
+                 $"FPS: {Fps:F1} {(SaveCount > 0 ? "保存 " + SaveCount + " 张" : "")} {(string.IsNullOrEmpty(DetectScore) ? "" : DetectScore)}",
                  System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                  LabelTypeface, LabelFontSize, FpsBrush);
                 context.DrawText(formattedText, new Point(20, 20));

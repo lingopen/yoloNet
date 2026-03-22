@@ -124,7 +124,7 @@ namespace yoloNetv2.ViewModels
         [RelayCommand]
         private void CreateValidationSet()
         {
-            double valRatio = 0.1; // 默认抽取 10%
+            double valRatio = 0.3; // 默认抽取 30%
             string imagesTrain = Path.Combine("dataset", "images", "train");
             string labelsTrain = Path.Combine("dataset", "labels", "train");
             string imagesVal = Path.Combine("dataset", "images", "val");

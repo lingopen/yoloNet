@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,7 +11,7 @@ namespace yoloNetv2.ViewModels
 {
     public partial class RtspViewModel : ViewModelBase
     {
-        
+
         /// <summary>
         /// 抽帧 每N帧保存一次
         /// </summary>
@@ -29,17 +30,42 @@ namespace yoloNetv2.ViewModels
         [ObservableProperty]
         ObservableCollection<string>? _devices = new ObservableCollection<string>();
 
-        public void OnInit()
+        [ObservableProperty]
+        int _devicesIndex = 0;
+
+        [ObservableProperty]
+        ObservableCollection<string>? _characters = new ObservableCollection<string>();
+
+        [ObservableProperty]
+        int _characterIndex = 0;
+
+        partial void OnDevicesIndexChanged(int value)
         {
+            if (value < 0) return;
+            var list = VideoHelper.GetDevices();
+            var characteristics = list[value].Characteristics;
+            Characters?.Clear();
+            foreach (var item in characteristics)
+            {
+                Characters!.Add(item.ToString());
+            }
+        }
+
+        public async Task OnInit()
+        {
+            await VideoHelper.UnInit();
             var list = VideoHelper.GetDevices();
             Devices?.Clear();
             foreach (var item in list)
             {
                 Devices!.Add($"{item.Description}");
             }
+            DevicesIndex = 0;
+            OnDevicesIndexChanged(0);
         }
+
         [RelayCommand]
-        public async Task Start(int index)
+        public async Task Start()
         {
             if (IsRunning)
             {
@@ -53,11 +79,11 @@ namespace yoloNetv2.ViewModels
                 return;
             }
 
-            
+
 
             try
             {
-                VideoHelper.Init(index);
+               await  VideoHelper.Init(DevicesIndex, CharacterIndex);
             }
             catch (Exception)
             {
@@ -78,11 +104,11 @@ namespace yoloNetv2.ViewModels
                 IsRunning = VideoHelper.IsRunning;
             }
         }
-         
+
 
         [RelayCommand]
         async Task Clear()
-        { 
+        {
             var res = MatExtensions.ClearFrame();
             await ShowTip(res);
         }

@@ -33,7 +33,7 @@ namespace yoloNetv2.Extentions
         /// <summary>
         /// 删除抽帧文件
         /// </summary>
-        public static (bool ,string) ClearFrame()
+        public static (bool, string) ClearFrame()
         {
             try
             {
@@ -42,19 +42,29 @@ namespace yoloNetv2.Extentions
                 {
                     Directory.Delete(folder, true); // true 表示递归删除子目录和文件 
                     Console.WriteLine($"已删除文件夹: {folder}");
-                    return (true, $"已删除文件夹: {folder}");
                 }
                 else
                 {
                     Console.WriteLine($"文件夹不存在: {folder}");
-                    return (false, $"文件夹不存在: {folder}");
+                }
+                string folder2 = Path.Combine("dataset", "labels", "train");
+                if (Directory.Exists(folder2))
+                {
+                    Directory.Delete(folder2, true); // true 表示递归删除子目录和文件 
+                    Console.WriteLine($"已删除文件夹: {folder2}");
+                    return (true, $"已删除文件夹: {folder}和{folder2}");
+                }
+                else
+                {
+                    Console.WriteLine($"文件夹不存在: {folder2}");
+                    return (false, $"文件夹不存在: {folder2}");
                 }
 
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"删除失败: {ex.Message}");
-                return (false, $"删除失败: {ex.Message}");  
+                return (false, $"删除失败: {ex.Message}");
             }
         }
     }

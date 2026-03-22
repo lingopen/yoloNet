@@ -1,112 +1,112 @@
 ﻿<UserControl
-    x:Class="yoloNetv2.PreView"
-    xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:cvt="using:yoloNetv2.Converters"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:yoloNetv2.ViewModels"
-    xmlns:ctl="using:yoloNetv2.Controls"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
-    x:DataType="vm:PreViewModel"
-    mc:Ignorable="d">
-    <UserControl.Resources>
-        <cvt:RunningConverter x:Key="cvtRunState" />
-        <cvt:RunningColorConverter x:Key="cvtRunColor" />
+x:Class="yoloNetv2.PreView"
+xmlns="https://github.com/avaloniaui"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:cvt="using:yoloNetv2.Converters"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+xmlns:vm="clr-namespace:yoloNetv2.ViewModels"
+xmlns:ctl="using:yoloNetv2.Controls"
+d:DesignHeight="450"
+d:DesignWidth="800"
+x:DataType="vm:PreViewModel"
+mc:Ignorable="d">
+	<UserControl.Resources>
+		<cvt:RunningConverter x:Key="cvtRunState" />
+		<cvt:RunningColorConverter x:Key="cvtRunColor" />
 
 
-    </UserControl.Resources>
-    <Design.DataContext>
-        <vm:PreViewModel />
-    </Design.DataContext>
+	</UserControl.Resources>
+	<Design.DataContext>
+		<vm:PreViewModel />
+	</Design.DataContext>
 
-    <Grid Background="Black">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="*" /> 
-        </Grid.RowDefinitions>
 
-        <!--  操作栏区域  -->
-        <Grid ColumnDefinitions="*,*,auto">
-            <StackPanel Margin="5" VerticalAlignment="Center">
-                <TextBlock
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    FontStyle="Oblique"
-                    Foreground="Gold"
-                    Text="摄像头：" />
-               <ComboBox x:Name="rtspAdd" FontSize="24" ItemsSource="{Binding Devices}" HorizontalAlignment="Stretch"/>
-            </StackPanel>
-            <StackPanel Grid.Column="1" Margin="5">
-                <TextBlock
-                    FontStyle="Oblique"
-                    Foreground="Gold"
-                    Text="ONNX模型：" />
-                <Grid ColumnDefinitions="*,auto">
-                    <TextBox
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Center"
-                        FontSize="24"
-                        IsReadOnly="True"
-                        Text="{Binding OnnxPath}" />
-                    <Button
-                        Grid.Column="1"
-                        Background="#0d6efd"
-                        Command="{Binding SelectOnnxFileCommand}"
-                        Content="..."
-                        FontSize="24"
-                        Foreground="White" />
-                </Grid>
-            </StackPanel>
-            <StackPanel
-                Grid.Column="2"
-                Margin="5"
-                VerticalAlignment="Center">
-                <TextBlock
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    FontStyle="Oblique"
-                    Foreground="Gold"
-                    Text="启动/停止：" />
-                <Button
-                    Width="100"
-                    Height="41"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    HorizontalContentAlignment="Center"
-                    VerticalContentAlignment="Center"
-                    Background="{Binding IsRunning, Converter={StaticResource cvtRunColor}, ConverterParameter='1'}"
-                    Command="{Binding StartCommand}"
-                    CommandParameter="{Binding #rtspAdd.SelectedIndex}"
-                    Content="{Binding IsRunning, Converter={StaticResource cvtRunState}, FallbackValue='\ue750'}"
-                    FontFamily="{StaticResource iconfont}"
-                    FontSize="24"
-                    Foreground="White" />
-            </StackPanel>
+	<!--  操作栏区域  -->
+	<Grid Background="Black" ColumnDefinitions="3*, *">
 
-        </Grid>
-        <!--  显示视频的区域  -->
-        <Border
-            Grid.Row="1"
-            Margin="2"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            BorderBrush="Gray"
-            BorderThickness="1">
-            <ctl:VideoDisplayControl
+		<StackPanel VerticalAlignment="Center" Margin="5" Grid.Column="1">
+			 
+				<TextBlock Margin="0,5,0,0"
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Center"
+				FontStyle="Oblique"
+				Foreground="Gold"
+				Text="摄像头：" />
+				<ComboBox x:Name="rtspAdd" FontSize="24" SelectedIndex="{Binding DevicesIndex}" ItemsSource="{Binding Devices}" HorizontalAlignment="Stretch"/>
+			 <TextBlock Margin="0,5,0,0"
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Center"
+				FontStyle="Oblique"
+				Foreground="Gold"
+				Text="分辨率：" />
+				<ComboBox FontSize="24" SelectedIndex="{Binding CharacterIndex}" ItemsSource="{Binding Characters}" HorizontalAlignment="Stretch"/>
+			 
+				<TextBlock Margin="0,5,0,0"
+				FontStyle="Oblique"
+				Foreground="Gold"
+				Text="ONNX模型：" />
+				<Grid ColumnDefinitions="*,auto">
+					<TextBox
+					HorizontalAlignment="Stretch"
+					VerticalAlignment="Center"
+					FontSize="24"
+					IsReadOnly="True"
+					Text="{Binding OnnxPath}" />
+					<Button
+					Grid.Column="1"
+					Background="#0d6efd"
+					Command="{Binding SelectOnnxFileCommand}"
+					Content="..."
+					FontSize="24"
+					Foreground="White" />
+				</Grid> 
+			<StackPanel
+			
+			Margin="5"
+			VerticalAlignment="Center">
+				<TextBlock
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Center"
+				FontStyle="Oblique"
+				Foreground="Gold"
+				Text="启动/停止：" />
+				<Button
+				Width="100"
+				Height="41"
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Center"
+				HorizontalContentAlignment="Center"
+				VerticalContentAlignment="Center"
+				Background="{Binding IsRunning, Converter={StaticResource cvtRunColor}, ConverterParameter='1'}"
+				Command="{Binding StartCommand}"
+			
+				Content="{Binding IsRunning, Converter={StaticResource cvtRunState}, FallbackValue='\ue750'}"
+				FontFamily="{StaticResource iconfont}"
+				FontSize="24"
+				Foreground="White" />
+			</StackPanel>
+
+		</StackPanel>
+		<!--  显示视频的区域  -->
+		<Border
+
+		Margin="2"
+		HorizontalAlignment="Center"
+		VerticalAlignment="Center"
+		BorderBrush="Gray"
+		BorderThickness="1">
+			<ctl:VideoDisplayControl
 			x:Name="canvas"   HorizontalAlignment="Center"
 			VerticalAlignment="Center"
 			/>
-        </Border>
-
-       
-        <ctl:MessageTip
+		</Border>
+		<ctl:MessageTip
 		Grid.Row="1"
 		Margin="15,0,15,0"
 		IsVisible="{Binding IsShowTip}"
 		Text="{Binding TipMsg}"
 		TextBackgound="#80000000"
 		TextColor="{Binding TipMsgColor}" />
-    </Grid>
+	</Grid>
 </UserControl>

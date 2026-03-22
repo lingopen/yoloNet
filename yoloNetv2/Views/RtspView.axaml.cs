@@ -1,4 +1,6 @@
-﻿using Avalonia.Controls;
+﻿using System.Threading.Tasks;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using yoloNetv2.Controls;
@@ -15,11 +17,12 @@ public partial class RtspView : UserControl
         _vm = App.ServiceProvider?.GetRequiredService<RtspViewModel>();
         this.DataContext = _vm;
     }
-    protected override  void OnInitialized()
+    protected override  async void OnLoaded(RoutedEventArgs e)
     {
         VideoHelper.UICanvas = this.canvas;
         if (_vm != null)
-              _vm.OnInit();
+             await  _vm.OnInit();
         base.OnInitialized();
     }
+   
 }

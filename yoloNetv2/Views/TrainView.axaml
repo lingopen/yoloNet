@@ -140,13 +140,12 @@
                     Margin="5"
                     HorizontalScrollBarVisibility="Auto"
                     VerticalScrollBarVisibility="Auto">
-                    <TextBox
+                    <TextBlock
                         Background="Black"
-                        BorderThickness="0"
-                        CaretBrush="Transparent"
+                        
                         FontFamily="Microsoft YaHei, Segoe UI, Arial"
-                        Foreground="Gold"
-                        IsReadOnly="True"
+                        Foreground="Gold" 
+                        
                         Text="{Binding Log}"
                         TextWrapping="Wrap" />
                 </ScrollViewer>
