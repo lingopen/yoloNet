@@ -46,6 +46,7 @@ namespace yoloNetv2.Extentions
                 else
                 {
                     Console.WriteLine($"文件夹不存在: {folder}");
+                    return (false, $"文件夹不存在: {folder}");
                 }
                 string folder2 = Path.Combine("dataset", "labels", "train");
                 if (Directory.Exists(folder2))
@@ -57,7 +58,7 @@ namespace yoloNetv2.Extentions
                 else
                 {
                     Console.WriteLine($"文件夹不存在: {folder2}");
-                    return (false, $"文件夹不存在: {folder2}");
+                    return (true, $"已删除文件夹: {folder}");
                 }
 
             }
