@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
@@ -28,6 +29,7 @@ public partial class PreViewModel : ViewModelBase
     {
         if (value < 0) return;
         var list = VideoHelper.GetDevices();
+        if (list == null || !list.Any()) return;
         var characteristics = list[value].Characteristics;
         Characters?.Clear();
         foreach (var item in characteristics)
