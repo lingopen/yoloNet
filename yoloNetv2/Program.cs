@@ -26,11 +26,12 @@ namespace yoloNetv2
         // Avalonia configuration, don't remove; also used by visual designer.
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
-                .UsePlatformDetect()
+                .UsePlatformDetect()// 自动检测平台
                 .With(new X11PlatformOptions
                 {
                     RenderingMode = new[] { X11RenderingMode.Egl }
                 })
+                //.UseSkia()                // 强制使用 Skia
                 .WithInterFont()
                 .LogToTrace();
     }

@@ -25,7 +25,7 @@ namespace yoloNetv2.Controls
     /// <summary>
     /// 视频帮助类
     /// </summary>
-    public static   class VideoHelper
+    public static class VideoHelper
     {
         // 🔹 UI显示控件
         public static VideoDisplayControl? UICanvas { get; set; }
@@ -34,7 +34,7 @@ namespace yoloNetv2.Controls
         private static CaptureDeviceDescriptor? Device;
         public static VideoCharacteristics? Characteristics { get; set; }
         public static bool IsInit { get; private set; }
-        public static  bool IsRunning { get; private set; }
+        public static bool IsRunning { get; private set; }
 
         //// 🔹 最后一帧图像流
         //public  Stream? ImageStream => _bitmap?.ToStream();
@@ -64,12 +64,12 @@ namespace yoloNetv2.Controls
         private static int isInferencingFlag = 0;
 
         // 🔹 上一次检测结果
-        private static Rect _lastDetectedFace = new Rect(0, 0, 0, 0);
+        private static List<Rect> _lastDetectedFaces = new List<Rect>();
         private static string _lastDetectedScore = "";
 
         // 🔹 推理计时器
         private static Stopwatch _yoloStopwatch = new();
-         
+
         #region ================== 扩展方法 ==================
         // 🔹 将 WriteableBitmap 转为 Stream
         public static Stream ToStream(this WriteableBitmap bitmap)
@@ -101,7 +101,7 @@ namespace yoloNetv2.Controls
                 _currentFps = _frameCount / (_fpsStopwatch.ElapsedMilliseconds / 1000.0);
                 _frameCount = 0;
                 _fpsStopwatch.Restart();
-            }  
+            }
             try
             {
                 width = Characteristics.Width;
@@ -109,12 +109,12 @@ namespace yoloNetv2.Controls
                 image = bufferScope.Buffer.ReferImage();
                 sourceBitmap = SKBitmap.Decode(image);
                 // 🔹 初始化显示缓存（WriteableBitmap + pixelBuffer）
-                if (_bitmap == null || _bitmap.PixelSize.Width != width|| _bitmap.PixelSize.Height != height)
+                if (_bitmap == null || _bitmap.PixelSize.Width != width || _bitmap.PixelSize.Height != height)
                 {
                     //_bitmap?.Dispose(); 这里临时去掉，多次切换页面，会造成负载
                     _bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888);
                     _pixelBuffer = new byte[width * height * 4];
-                     
+
                 }
 
                 // 🔹 读取像素数据到 _pixelBuffer
@@ -161,17 +161,20 @@ namespace yoloNetv2.Controls
 
                                 var onnxInput = NamedOnnxValue.CreateFromTensor("images", tensor);
                                 using var results = _session.Run(new[] { onnxInput });
-                                var boxes = TensorHelper.ParseYoloOutputForNoClass(results,srcW, srcH, modelInputSize);
+                                var boxes = TensorHelper.ParseYoloOutputForNoClass(results, srcW, srcH, modelInputSize);
 
                                 if (boxes.Any())
                                 {
-                                    var box = boxes.First();
-                                    _lastDetectedFace = new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1);
-                                    _lastDetectedScore = $"得分 {box.Score} 检测耗时 {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                    _lastDetectedFaces.Clear();
+                                    foreach (var box in boxes)
+                                    {
+                                        _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
+                                    }
+                                    _lastDetectedScore = $"最高 {boxes.Max(p => p.Score).ToString("N2")} 最低 {boxes.Min(p => p.Score).ToString("N2")} 检测到 {boxes.Count()}个 耗时 {_yoloStopwatch.ElapsedMilliseconds}ms";
                                 }
                                 else
                                 {
-                                    _lastDetectedFace = new Rect(0, 0, 0, 0);
+                                    _lastDetectedFaces.Clear();
                                     _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
                                 }
                             }
@@ -204,7 +207,7 @@ namespace yoloNetv2.Controls
                     Marshal.Copy(_pixelBuffer, 0, fb.Address, _pixelBuffer.Length);
                     UICanvas.Fps = _currentFps;
                     UICanvas.SaveCount = _saveCount;
-                    UICanvas.UpdateFrame(_bitmap!, _lastDetectedFace, _lastDetectedScore);
+                    UICanvas.UpdateFrame(_bitmap!, _lastDetectedFaces, _lastDetectedScore);
                 });
             }
             // 🔹 主线程释放
@@ -304,7 +307,7 @@ namespace yoloNetv2.Controls
                 IsRunning = false;
             }
         }
-        
+
         // 🔹 卸载摄像头
         public static async Task UnInit()
         {
@@ -315,5 +318,5 @@ namespace yoloNetv2.Controls
         }
         #endregion 
     }
-     
+
 }

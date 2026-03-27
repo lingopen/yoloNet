@@ -19,6 +19,8 @@ namespace yoloNetv2.Extentions
             services.AddSingleton<TrainView>();
             services.AddSingleton<TrainViewModel>();
 
+            services.AddSingleton<PreImageView>();
+            services.AddSingleton<PreImageViewModel>();
 
             services.AddSingleton<PreView>();
             services.AddSingleton<PreViewModel>();

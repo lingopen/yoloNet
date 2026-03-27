@@ -31,6 +31,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Update="Views\PreImageView.axaml.cs">
+		  <DependentUpon>PreImageView.axaml</DependentUpon>
+		</Compile>
 		<Compile Update="Views\MarkView.axaml.cs">
 			<DependentUpon>MarkView.axaml</DependentUpon>
 		</Compile>

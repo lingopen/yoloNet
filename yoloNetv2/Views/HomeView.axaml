@@ -45,7 +45,8 @@
                 CommandParameter="3"
                 Content="3.训练"
                 Foreground="White" />
-             <TextBlock
+
+            <TextBlock
                 Margin="5"
                 VerticalAlignment="Center"
                 Foreground="Gray"
@@ -55,7 +56,21 @@
                 Background="#0d6efd"
                 Command="{Binding ShowCommand}"
                 CommandParameter="4"
-                Content="4.推理"
+                Content="4.图片推理"
+                Foreground="White" />
+
+
+             <TextBlock
+                Margin="5"
+                VerticalAlignment="Center"
+                Foreground="Gray"
+                Text=">" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ShowCommand}"
+                CommandParameter="5"
+                Content="5.视频推理"
                 Foreground="White" />
           
         </StackPanel>

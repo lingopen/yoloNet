@@ -3,15 +3,17 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+
 namespace yoloNetv2.Controls
 {
-    public class VideoDisplayControl : Control
+    public class ImageDisplayControl : Control
     {
-        public double Fps { get; set; } = 0;
+
+
         public IBrush FpsBrush { get; set; } = Brushes.Red;
-        public double FpsFontSize { get; set; } = 18;
-        // 视频帧
-        public WriteableBitmap? VideoFrame { get; set; }
+
+        // 图片帧
+        public WriteableBitmap? ImageFrame { get; set; }
 
         // 目标检测框
         public List<Rect>? DetectRects { get; set; }
@@ -20,7 +22,7 @@ namespace yoloNetv2.Controls
         public string DetectScore { get; set; } = "";
 
         // 可配置画笔
-        public Pen DetectPen { get; set; } = new Pen(Brushes.Red, 2);
+        public Pen DetectPen { get; set; } = new Pen(Brushes.Yellow, 2);
 
         public Typeface LabelTypeface { get; set; } = new Typeface("Arial");
         public double LabelFontSize { get; set; } = 16;
@@ -34,15 +36,12 @@ namespace yoloNetv2.Controls
         {
             base.Render(context);
 
-            if (VideoFrame != null)
+            if (ImageFrame != null)
             {
-                // 视频帧缩放到控件大小
+                // 帧缩放到控件大小
                 Rect destRect = new Rect(0, 0, Bounds.Width, Bounds.Height);
-                //Rect srcRect = new Rect(0, 0, VideoFrame.PixelSize.Width, VideoFrame.PixelSize.Height);
-                //context.DrawImage(VideoFrame, srcRect, destRect);
-                context.DrawImage(VideoFrame, destRect);
+                context.DrawImage(ImageFrame, destRect);
             }
-
 
             // 绘制框 
             if (DetectRects != null)
@@ -52,29 +51,20 @@ namespace yoloNetv2.Controls
                     {
                         // 缩放框到控件大小
 
-                        var scaledRect = ScaleRect(DetectRect, VideoFrame, Bounds);
+                        var scaledRect = ScaleRect(DetectRect, ImageFrame, Bounds);
 
                         // 绘制矩形
                         context.DrawRectangle(null, DetectPen, scaledRect);
 
-                        //// 绘制文字 
-                        //var formattedText = new FormattedText(
-                        //    $"({FaceScore})",
-                        //    System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                        //    LabelTypeface,
-                        //    LabelFontSize,
-                        //    // 字体大小
-                        //    LabelBrush);
-                        //context.DrawText(formattedText, new Point(scaledRect.X, scaledRect.Y - LabelFontSize - 2));
                     }
                 }
 
-            // 绘制 FPS
-            if (Fps > 0)
+            // 绘制 文本
+            if (!string.IsNullOrEmpty(DetectScore))
             {
 
                 var formattedText = new FormattedText(
-                 $"FPS: {Fps:F1} {(SaveCount > 0 ? "保存 " + SaveCount + " 张" : "")} {(string.IsNullOrEmpty(DetectScore) ? "" : DetectScore)}",
+                 $"{(string.IsNullOrEmpty(DetectScore) ? "" : DetectScore)}",
                  System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                  LabelTypeface, LabelFontSize, FpsBrush);
                 context.DrawText(formattedText, new Point(20, 20));
@@ -99,7 +89,7 @@ namespace yoloNetv2.Controls
         // 更新视频帧和绘制目标检测框和得分信息
         public void UpdateFrame(WriteableBitmap bitmap, List<Rect> detectRects, string? detectScore = null)
         {
-            VideoFrame = bitmap;
+            ImageFrame = bitmap;
             DetectRects = detectRects;
             if (detectScore != null)
                 DetectScore = detectScore;

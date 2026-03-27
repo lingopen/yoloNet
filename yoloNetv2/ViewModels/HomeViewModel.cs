@@ -30,6 +30,9 @@ namespace yoloNetv2.ViewModels
                         UserContent = App.ServiceProvider?.GetRequiredService<TrainView>();
                         break;
                     case "4":
+                        UserContent = App.ServiceProvider?.GetRequiredService<PreImageView>();
+                        break;
+                    case "5":
                         UserContent = App.ServiceProvider?.GetRequiredService<PreView>();
                         break;
 

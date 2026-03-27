@@ -46,5 +46,5 @@ namespace yoloNetv2.Controls
                 context.DrawRectangle(null, pen, ViewModel.TempRect.Value);
             }
         }
-    }
+    } 
 }
