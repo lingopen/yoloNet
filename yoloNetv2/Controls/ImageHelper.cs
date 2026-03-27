@@ -49,8 +49,8 @@ namespace yoloNetv2.Controls
                     var options = new SessionOptions();
                     try
                     {
-                        options.AppendExecutionProvider_CPU();
-                        //options.AppendExecutionProvider_CUDA(0);
+                        //options.AppendExecutionProvider_CPU();
+                        options.AppendExecutionProvider_CUDA(0);
                         Console.WriteLine("CUDA Execution Provider added successfully.");
                     }
                     catch (OnnxRuntimeException ex)
@@ -63,8 +63,9 @@ namespace yoloNetv2.Controls
                 if (UICanvas == null) return false;
                 return true;
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return false;
             }
         }
@@ -121,7 +122,6 @@ namespace yoloNetv2.Controls
                             if (boxes.Any())
                             {
                                 _lastDetectedFaces.Clear();
-                               
                                 foreach (var box in boxes)
                                 {
                                     _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));

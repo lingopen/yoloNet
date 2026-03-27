@@ -259,8 +259,8 @@ namespace yoloNetv2.Controls
                     var options = new SessionOptions();
                     try
                     {
-                        options.AppendExecutionProvider_CPU();
-                        //options.AppendExecutionProvider_CUDA(0);
+                        //options.AppendExecutionProvider_CPU();
+                        options.AppendExecutionProvider_CUDA(0);
                         Console.WriteLine("CUDA Execution Provider added successfully.");
                     }
                     catch (OnnxRuntimeException ex)
@@ -280,8 +280,10 @@ namespace yoloNetv2.Controls
                 IsRunning = true;
                 return true;
             }
-            catch
+            catch(Exception ex)
+
             {
+                Console.WriteLine(ex.Message);
                 _captureDevice?.Dispose();
                 _captureDevice = null;
                 IsRunning = false;

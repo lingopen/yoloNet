@@ -64,7 +64,7 @@ namespace yoloNetv2
 
         // 🔹 简单解析 YOLO 输出
       
-        public static Box[] ParseYoloOutputForNoClass(IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results, int srcW, int srcH, int dstSize, float confThreshold = 0.25f)
+        public static Box[] ParseYoloOutputForNoClass(IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results, int srcW, int srcH, int dstSize, float confThreshold = 0.3f, float iouThreshold = 0.5f)
         {
             var output = results.First().AsTensor<float>(); // shape: [1,5,N]
             int N = output.Dimensions[2]; // 框数量
@@ -107,9 +107,41 @@ namespace yoloNetv2
                     ClassId = 0 // 暂时没有类别信息
                 });
             }
+            // ==========================
+            // NMS 去重
+            // ==========================
+            var nmsList = new List<Box>();
+            // 按置信度从高到低排序
+            var sorted = list.OrderByDescending(b => b.Score).ToList();
 
-            return list.ToArray();
+            while (sorted.Count > 0)
+            {
+                var best = sorted[0];
+                nmsList.Add(best);
+                sorted.RemoveAt(0);
+
+                sorted = sorted
+                    .Where(b => IoU(best, b) < iouThreshold)
+                    .ToList();
+            }
+
+            return nmsList.ToArray(); 
         }
+        // IoU 计算函数
+        private static float IoU(Box a, Box b)
+        {
+            float x1 = Math.Max(a.X1, b.X1);
+            float y1 = Math.Max(a.Y1, b.Y1);
+            float x2 = Math.Min(a.X2, b.X2);
+            float y2 = Math.Min(a.Y2, b.Y2);
+
+            float interArea = Math.Max(0, x2 - x1) * Math.Max(0, y2 - y1);
+            float unionArea = (a.X2 - a.X1) * (a.Y2 - a.Y1) + (b.X2 - b.X1) * (b.Y2 - b.Y1) - interArea;
+
+            return interArea / unionArea;
+        }
+
+
     }
 
     public struct Box
