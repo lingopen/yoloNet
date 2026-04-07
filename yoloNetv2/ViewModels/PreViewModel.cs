@@ -60,13 +60,22 @@ public partial class PreViewModel : ViewModelBase
             await ShowTip((false, "无法获取主窗口"));
             return;
         }
-
-        var file_options = new FilePickerOpenOptions
-        {
-            Title = "选择 ONNX 文件",
-            AllowMultiple = false,
-            FileTypeFilter = new[] { new FilePickerFileType("ONNX 文件") { Patterns = new[] { "*.onnx" } } }
-        };
+        FilePickerOpenOptions file_options;
+        if (OperatingSystem.IsWindows())
+            file_options = new FilePickerOpenOptions
+            {
+                Title = "选择 ONNX 文件",
+                AllowMultiple = false,
+                FileTypeFilter = new[] { new FilePickerFileType("ONNX 文件") { Patterns = new[] { "*.onnx" } } }
+            };
+        else
+            file_options = new FilePickerOpenOptions
+            {
+                Title = "选择 RKNN 文件",
+                AllowMultiple = false,
+                FileTypeFilter = new[] { new FilePickerFileType("RKNN 文件") { Patterns = new[] { "*.rknn" } } }
+            };
+     
 
         var result = await desktop.MainWindow.StorageProvider.OpenFilePickerAsync(file_options);
         if (result != null && result.Count > 0)
@@ -83,7 +92,10 @@ public partial class PreViewModel : ViewModelBase
     {
         if (string.IsNullOrEmpty(OnnxPath))
         {
-            await ShowTip((false, "请选择Onnx文件"));
+            if(OperatingSystem.IsWindows())
+                await ShowTip((false, "请选择ONNX文件"));
+            else
+                await ShowTip((false, "请选择RKNN文件"));
             return;
         }
         if (IsRunning)

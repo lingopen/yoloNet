@@ -7,7 +7,7 @@ using SkiaSharp;
 
 namespace yoloNetv2
 { 
-    public static class TensorHelper
+    public static class OnnxHelper
     {
         public static byte[] DecodeJpegToRGB(SKBitmap bitmap, out int width, out int height)
         {

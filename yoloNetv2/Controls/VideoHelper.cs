@@ -144,7 +144,7 @@ namespace yoloNetv2.Controls
                         _yoloStopwatch.Restart();
                         int srcW, srcH;
                         // 假设 bufferScope.Buffer 获取到 RGB byte[]，长度 = width * height * 3
-                        byte[] rgbPixels = TensorHelper.DecodeJpegToRGB(sourceBitmap, out srcW, out srcH);
+                        byte[] rgbPixels = OnnxHelper.DecodeJpegToRGB(sourceBitmap, out srcW, out srcH);
                         if (rgbPixels == null || rgbPixels.Length == 0)
                         {
                             Interlocked.Exchange(ref isInferencingFlag, 0);
@@ -157,11 +157,11 @@ namespace yoloNetv2.Controls
                             {
                                 // 🔹 模型训练输入尺寸
                                 int modelInputSize = width; // 或 640，跟你的 yolo11n.pt 训练尺寸保持一致
-                                var tensor = TensorHelper.FillTensorWithLetterbox(rgbPixels, srcW, srcH, modelInputSize);
+                                var tensor = OnnxHelper.FillTensorWithLetterbox(rgbPixels, srcW, srcH, modelInputSize);
 
                                 var onnxInput = NamedOnnxValue.CreateFromTensor("images", tensor);
                                 using var results = _session.Run(new[] { onnxInput });
-                                var boxes = TensorHelper.ParseYoloOutputForNoClass(results, srcW, srcH, modelInputSize);
+                                var boxes = OnnxHelper.ParseYoloOutputForNoClass(results, srcW, srcH, modelInputSize);
 
                                 if (boxes.Any())
                                 {
@@ -215,6 +215,7 @@ namespace yoloNetv2.Controls
 
         }
         #endregion
+
         #region ================== 公共方法 ==================
         // 🔹 获取可用摄像头列表
         public static List<CaptureDeviceDescriptor> GetDevices()
@@ -222,11 +223,11 @@ namespace yoloNetv2.Controls
             var devices = new CaptureDevices();
             return devices.EnumerateDescriptors().Where(d => d.Characteristics.Length >= 1).ToList();
         }
+
         // 🔹 初始化摄像头
         public static async Task Init(int index = 0, int characterIndex = -1)
         {
             if (IsInit) await UnInit();
-
             var devices = new CaptureDevices();
             var availableDevices = devices.EnumerateDescriptors().Where(d => d.Characteristics.Length >= 1).ToList();
             if (!availableDevices.Any()) return;
@@ -239,6 +240,7 @@ namespace yoloNetv2.Controls
                 Characteristics = Device?.Characteristics[characterIndex];
             if (Characteristics != null && UICanvas != null)
             {
+
                 UICanvas.Width = Characteristics.Width;
                 UICanvas.Height = Characteristics.Height;//直接显示正方形
             }
@@ -259,8 +261,8 @@ namespace yoloNetv2.Controls
                     var options = new SessionOptions();
                     try
                     {
-                        //options.AppendExecutionProvider_CPU();
-                        options.AppendExecutionProvider_CUDA(0);
+                        options.AppendExecutionProvider_CPU();
+                        //options.AppendExecutionProvider_CUDA(1);
                         Console.WriteLine("CUDA Execution Provider added successfully.");
                     }
                     catch (OnnxRuntimeException ex)
@@ -276,11 +278,12 @@ namespace yoloNetv2.Controls
                 _fpsStopwatch.Restart();
                 _captureDevice = await Device.OpenAsync(Characteristics, OnPixelBufferArrivedAsync);
                 if (_captureDevice == null) return false;
+
                 await _captureDevice.StartAsync();
                 IsRunning = true;
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
 
             {
                 Console.WriteLine(ex.Message);

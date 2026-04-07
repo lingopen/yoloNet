@@ -25,12 +25,12 @@ namespace yoloNetv2.ViewModels
 
         [ObservableProperty]
         int imageWidth;
-        [ObservableProperty] 
+        [ObservableProperty]
         int imageHeight;
 
         public PreImageViewModel()
         {
-           
+
 
         }
         public void LoadAllImage()
@@ -55,11 +55,14 @@ namespace yoloNetv2.ViewModels
             if (_imageFiles == null || _imageFiles.Length == 0) return;
 
             var bitmap = SKBitmap.Decode(_imageFiles[CurrentIndex]);
+            
             ImageWidth = bitmap.Width;
             ImageHeight = bitmap.Height;
-            ImageHelper.OnDraw(bitmap);
-           
-            Msg = _imageFiles[CurrentIndex]; 
+            if (OperatingSystem.IsWindows())
+                ImageHelper.OnDraw(bitmap);
+            else ImageHelper.OnDraw_RKNN(bitmap);
+
+            Msg = _imageFiles[CurrentIndex];
         }
 
         [RelayCommand]
@@ -98,20 +101,31 @@ namespace yoloNetv2.ViewModels
                 await ShowTip((false, "无法获取主窗口"));
                 return;
             }
-
-            var file_options = new FilePickerOpenOptions
-            {
-                Title = "选择 ONNX 文件",
-                AllowMultiple = false,
-                FileTypeFilter = new[] { new FilePickerFileType("ONNX 文件") { Patterns = new[] { "*.onnx" } } }
-            };
+            FilePickerOpenOptions file_options;
+            if (OperatingSystem.IsWindows())
+                file_options = new FilePickerOpenOptions
+                {
+                    Title = "选择 ONNX 文件",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[] { new FilePickerFileType("ONNX 文件") { Patterns = new[] { "*.onnx" } } }
+                };
+            else
+                file_options = new FilePickerOpenOptions
+                {
+                    Title = "选择 RKNN 文件",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[] { new FilePickerFileType("RKNN 文件") { Patterns = new[] { "*.rknn" } } }
+                };
 
             var result = await desktop.MainWindow.StorageProvider.OpenFilePickerAsync(file_options);
             if (result != null && result.Count > 0)
             {
                 OnnxPath = result[0].Path.LocalPath;
             }
-            ImageHelper.Init(OnnxPath);
+            if (OperatingSystem.IsWindows())
+                ImageHelper.Init(OnnxPath);
+            else
+                ImageHelper.Init_RKNN(OnnxPath);
             LoadCurrentImage();
         }
     }
