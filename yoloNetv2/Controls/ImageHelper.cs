@@ -37,7 +37,7 @@ namespace yoloNetv2.Controls
         private static string _lastDetectedScore = "";
 
         // 🔹 推理计时器
-        private static Stopwatch _yoloStopwatch = new();
+        private static Stopwatch _inferenceStopwatch = new();
 
         // 🔹 初始化算法
         public static bool Init(string? onnxPath = null)
@@ -76,7 +76,7 @@ namespace yoloNetv2.Controls
         // 🔹 
         public static void UnInit()
         {
-            _yoloStopwatch.Stop();
+            _inferenceStopwatch.Stop();
 
             if (_rknnInitialized)
             {
@@ -109,7 +109,7 @@ namespace yoloNetv2.Controls
 
                     if (_session != null)
                     {
-                        _yoloStopwatch.Restart();
+                        _inferenceStopwatch.Restart();
                         int srcW, srcH;
                         // 假设 bufferScope.Buffer 获取到 RGB byte[]，长度 = width * height * 3
                         byte[] rgbPixels = OnnxHelper.DecodeJpegToRGB(sourceBitmap, out srcW, out srcH);
@@ -133,12 +133,12 @@ namespace yoloNetv2.Controls
                                 {
                                     _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
                                 }
-                                _lastDetectedScore = $"最高 {boxes.Max(p => p.Score).ToString("N2")} 最低 {boxes.Min(p => p.Score).ToString("N2")} 检测到 {boxes.Count()}个 耗时 {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                _lastDetectedScore = $"最高 {boxes.Max(p => p.Score).ToString("N2")} 最低 {boxes.Min(p => p.Score).ToString("N2")} 检测到 {boxes.Count()}个 耗时 {_inferenceStopwatch.ElapsedMilliseconds}ms";
                             }
                             else
                             {
                                 _lastDetectedFaces.Clear();
-                                _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                _lastDetectedScore = $"未检测到目标 | {_inferenceStopwatch.ElapsedMilliseconds}ms";
                             }
                         }
                         catch (Exception ex)
@@ -187,6 +187,9 @@ namespace yoloNetv2.Controls
                 return false;
             }
         }
+
+
+
         public static void OnDraw_RKNN(SKBitmap sourceBitmap, int modelInputSize = 320, float confThreshold = 0.3f, float iouThreshold = 0.5f)
         {
             try
@@ -214,11 +217,11 @@ namespace yoloNetv2.Controls
 
                     if (_rknnInitialized)
                     {
-                        _yoloStopwatch.Restart(); 
+                        _inferenceStopwatch.Restart();
                         try
-                        {                         
+                        {
                             // 🔹 推理
-                            var boxes = RKNNHelper.InferenceAndDebugNHWC(sourceBitmap, width, height, width);
+                            var boxes = RKNNHelper.Run(sourceBitmap, modelInputSize, confThreshold, iouThreshold);
                             // 🔹 打印 boxes 日志
                             if (boxes != null && boxes.Length > 0)
                             {
@@ -235,7 +238,7 @@ namespace yoloNetv2.Controls
                                 Console.WriteLine("未检测到目标");
                             }
 
-                            if (boxes.Any())
+                            if (boxes != null && boxes.Length > 0)
                             {
 
                                 _lastDetectedFaces.Clear();
@@ -243,19 +246,19 @@ namespace yoloNetv2.Controls
                                 {
                                     _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
                                 }
-                                _lastDetectedScore = $"最高 {boxes.Max(p => p.Score):N2} 最低 {boxes.Min(p => p.Score):N2} 检测到 {boxes.Length} 个 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                _lastDetectedScore = $"最高 {boxes.Max(p => p.Score):N2} 最低 {boxes.Min(p => p.Score):N2} 检测到 {boxes.Length} 个 | {_inferenceStopwatch.ElapsedMilliseconds}ms";
                             }
                             else
                             {
                                 _lastDetectedFaces.Clear();
-                                _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                _lastDetectedScore = $"未检测到目标 | {_inferenceStopwatch.ElapsedMilliseconds}ms";
                             }
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine($"RKNN 推理异常: {ex.Message}");
                             _lastDetectedFaces.Clear();
-                            _lastDetectedScore = $"推理异常 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                            _lastDetectedScore = $"推理异常 | {_inferenceStopwatch.ElapsedMilliseconds}ms";
                         }
                     }
                 }

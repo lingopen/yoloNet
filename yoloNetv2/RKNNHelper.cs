@@ -8,267 +8,137 @@ using SkiaSharp;
 
 namespace yoloNetv2
 {
-    /// <summary>
-    /// RKNN Lite2 推理帮助类（工程级别，支持 NHWC 输入和 YOLO 输出解析）
-    /// </summary>
+
     // ------------------------
     // RKNN Helper
     // ------------------------
     public static class RKNNHelper
     {
-        private static IntPtr _ctx = IntPtr.Zero;
-        static bool _initialized = false;
+        private static ulong _rknnCtx = 0;
+        private static bool _initialized = false;
 
         public static void Init(string modelPath)
         {
             if (_initialized) return;
-            if (!File.Exists(modelPath)) throw new FileNotFoundException(modelPath); 
-            var _modelData = File.ReadAllBytes(modelPath);
-            IntPtr modelPtr = Marshal.AllocHGlobal(_modelData.Length);
-            Marshal.Copy(_modelData, 0, modelPtr, _modelData.Length);
+            if (!System.IO.File.Exists(modelPath))
+                throw new Exception($"RKNN model not found: {modelPath}");
 
-            int ret = RknnNative.rknn_init(ref _ctx, modelPtr, (uint)_modelData.Length, 0, IntPtr.Zero);
-            Marshal.FreeHGlobal(modelPtr);
-            if (ret != RknnNative.RKNN_SUCC)
-                throw new Exception($"RKNN init failed: {RknnNative.GetErrorMessage(ret)}");
+            byte[] rknnModel = System.IO.File.ReadAllBytes(modelPath);
+            IntPtr modelPtr = Marshal.AllocHGlobal(rknnModel.Length);
+            Marshal.Copy(rknnModel, 0, modelPtr, rknnModel.Length);
 
-            // 查询输出 tensor 属性
-            var outAttr = new RknnNative.rknn_tensor_attr();
-            outAttr.index = 0;
-            IntPtr outPtr = Marshal.AllocHGlobal(Marshal.SizeOf(outAttr));
-            Marshal.StructureToPtr(outAttr, outPtr, false);
-
-            ret = RknnNative.rknn_query(_ctx, 2, outPtr, (uint)Marshal.SizeOf<RknnNative.rknn_tensor_attr>());
-            if (ret != RknnNative.RKNN_SUCC)
+            RknnNative.rknn_init_extend extend = new RknnNative.rknn_init_extend
             {
-                Marshal.FreeHGlobal(outPtr);
-                throw new Exception($"RKNN query output_attr failed: {RknnNative.GetErrorMessage(ret)}");
-            }
-
-            outAttr = Marshal.PtrToStructure<RknnNative.rknn_tensor_attr>(outPtr);
-            Marshal.FreeHGlobal(outPtr);
-
-            var  _outputSize = 1;
-            for (int i = 0; i < outAttr.n_dims; i++)
-                _outputSize *= (int)outAttr.dims[i];
-
-            _initialized = true;
-            Console.WriteLine($"RKNN initialized. OutputSize={_outputSize}");
-        }
-        public static void Release()
-        {
-            if (_ctx != IntPtr.Zero)
-            {
-                RknnNative.rknn_destroy(_ctx);
-                _ctx = IntPtr.Zero;
-                _initialized = false;
-                Console.WriteLine("RKNN context released");
-            }
-        }
-        // Half16 -> float32
-        private static float HalfToFloat(ushort half)
-        {
-            int sign = (half >> 15) & 0x0001;
-            int exp = (half >> 10) & 0x001F;
-            int mant = half & 0x03FF;
-
-            if (exp == 0)
-            {
-                if (mant == 0) return sign == 0 ? 0f : -0f;
-                float f = (float)(mant / 1024.0) * (float)Math.Pow(2, -14);
-                return sign == 0 ? f : -f;
-            }
-            else if (exp == 31)
-            {
-                if (mant == 0) return sign == 0 ? float.PositiveInfinity : float.NegativeInfinity;
-                return float.NaN;
-            }
-
-            float val = (1 + mant / 1024f) * (float)Math.Pow(2, exp - 15);
-            return sign == 0 ? val : -val;
-        }
-
-        // Letterbox NHWC
-        private static byte[] FillTensorWithLetterboxNHWC(byte[] rgb, int srcW, int srcH, int dstSize)
-        {
-            byte[] tensor = new byte[dstSize * dstSize * 3]; // NHWC
-            float scale = Math.Min((float)dstSize / srcW, (float)dstSize / srcH);
-            int newW = (int)(srcW * scale);
-            int newH = (int)(srcH * scale);
-            int offsetX = (dstSize - newW) / 2;
-            int offsetY = (dstSize - newH) / 2;
-
-            for (int y = 0; y < newH; y++)
-            {
-                for (int x = 0; x < newW; x++)
-                {
-                    int srcX = (int)(x / scale);
-                    int srcY = (int)(y / scale);
-                    int srcIndex = (srcY * srcW + srcX) * 3;
-                    int dstIndex = ((y + offsetY) * dstSize + (x + offsetX)) * 3;
-
-                    tensor[dstIndex + 0] = rgb[srcIndex + 0]; // R
-                    tensor[dstIndex + 1] = rgb[srcIndex + 1]; // G
-                    tensor[dstIndex + 2] = rgb[srcIndex + 2]; // B
-                }
-            }
-            return tensor;
-        }
-
-        // SKBitmap -> byte[] RGB
-        private static byte[] SKBitmapToRGB(SKBitmap bmp)
-        {
-            int width = bmp.Width;
-            int height = bmp.Height;
-            byte[] rgb = new byte[width * height * 3];
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    var c = bmp.GetPixel(x, y);
-                    int idx = (y * width + x) * 3;
-                    rgb[idx + 0] = c.Red;
-                    rgb[idx + 1] = c.Green;
-                    rgb[idx + 2] = c.Blue;
-                }
-            }
-            return rgb;
-        }
-
-        // IoU
-        private static float IoU(Box a, Box b)
-        {
-            float x1 = Math.Max(a.X1, b.X1);
-            float y1 = Math.Max(a.Y1, b.Y1);
-            float x2 = Math.Min(a.X2, b.X2);
-            float y2 = Math.Min(a.Y2, b.Y2);
-            float w = Math.Max(0, x2 - x1);
-            float h = Math.Max(0, y2 - y1);
-            float inter = w * h;
-            float union = (a.X2 - a.X1) * (a.Y2 - a.Y1) + (b.X2 - b.X1) * (b.Y2 - b.Y1) - inter;
-            return union > 0 ? inter / union : 0;
-        }
-
-        // ------------------------
-        // 核心推理函数
-        // ------------------------
-        public static Box[] InferenceAndDebugNHWC(SKBitmap bmp, int dstSize,
-            float confThreshold = 0.3f, float iouThreshold = 0.5f)
-        {
-            if (_ctx == IntPtr.Zero) throw new Exception("RKNN context not initialized");
-
-            int srcW = bmp.Width;
-            int srcH = bmp.Height;
-            byte[] rgb = SKBitmapToRGB(bmp);
-            byte[] input = FillTensorWithLetterboxNHWC(rgb, srcW, srcH, dstSize);
-
-            IntPtr inputPtr = Marshal.AllocHGlobal(input.Length);
-            Marshal.Copy(input, 0, inputPtr, input.Length);
-
-            var inputs = new RknnNative.rknn_input[1];
-            inputs[0] = new RknnNative.rknn_input
-            {
-                index = 0,
-                buf = inputPtr,
-                size = (uint)input.Length,
-                pass_through = 0,
-                type = RknnNative.rknn_tensor_type.RKNN_TENSOR_UINT8,
-                fmt = RknnNative.rknn_tensor_format.RKNN_TENSOR_NHWC
+                ctx = 0,
+                reserved = new byte[112]
             };
 
-            int ret = RknnNative.rknn_inputs_set(_ctx, 1, inputs);
-            Marshal.FreeHGlobal(inputPtr);
+            int ret = RknnNative.rknn_init(ref _rknnCtx, modelPtr, (uint)rknnModel.Length, 0, ref extend);
+            Marshal.FreeHGlobal(modelPtr);
+
+            if (ret != RknnNative.RKNN_SUCC)
+                throw new Exception($"rknn_init failed: {RknnNative.GetErrorMessage(ret)}");
+
+            _initialized = true;
+        }
+
+        public static void Release()
+        {
+            if (!_initialized) return;
+            RknnNative.rknn_destroy(_rknnCtx);
+            _rknnCtx = 0;
+            _initialized = false;
+        }
+
+        public static Box[] Run(SKBitmap bmp, int modelInputSize = 320, float confThreshold = 0.3f, float iouThreshold = 0.5f)
+        {
+            if (!_initialized) throw new Exception("RKNN not initialized");
+
+            // 1️⃣ Letterbox + 最近邻 + NHWC float32
+            var (inputData, scale, offsetX, offsetY) = LetterboxAndConvert(bmp, modelInputSize);
+
+            // 2️⃣ 设置输入
+            IntPtr bufPtr = Marshal.AllocHGlobal(sizeof(float) * inputData.Length);
+            Marshal.Copy(inputData, 0, bufPtr, inputData.Length);
+
+            var input = new RknnNative.rknn_input
+            {
+                index = 0,
+                buf = bufPtr,
+                size = (uint)(sizeof(float) * inputData.Length),
+                type = RknnNative.rknn_tensor_type.RKNN_TENSOR_FLOAT32,
+                fmt = RknnNative.rknn_tensor_format.RKNN_TENSOR_NHWC,
+                pass_through = 0
+            };
+
+            int ret = RknnNative.rknn_inputs_set(_rknnCtx, 1, new[] { input });
+            Marshal.FreeHGlobal(bufPtr);
+
             if (ret != RknnNative.RKNN_SUCC)
                 throw new Exception($"rknn_inputs_set failed: {RknnNative.GetErrorMessage(ret)}");
 
-            // 查询输出属性
-            var outAttr = new RknnNative.rknn_tensor_attr { index = 0 };
-            IntPtr outPtr = Marshal.AllocHGlobal(Marshal.SizeOf(outAttr));
-            Marshal.StructureToPtr(outAttr, outPtr, false);
-            ret = RknnNative.rknn_query(_ctx, 2, outPtr, (uint)Marshal.SizeOf<RknnNative.rknn_tensor_attr>());
-            outAttr = Marshal.PtrToStructure<RknnNative.rknn_tensor_attr>(outPtr);
-            Marshal.FreeHGlobal(outPtr);
-
-            IntPtr outBuffer = Marshal.AllocHGlobal((int)outAttr.size);
-            var outputs = new RknnNative.rknn_output[1]
+            // 3️⃣ 执行推理
+            var runExtend = new RknnNative.rknn_run_extend
             {
-            new RknnNative.rknn_output
-            {
-                index = 0,
-                is_prealloc = 1,
-                buf = outBuffer,
-                size = outAttr.size
-            }
+                frame_id = 0,
+                non_block = 0,
+                timeout_ms = 0,
+                fence_fd = -1
             };
 
-            ret = RknnNative.rknn_outputs_get(_ctx, 1, outputs, 0);
+            ret = RknnNative.rknn_run(_rknnCtx, ref runExtend);
             if (ret != RknnNative.RKNN_SUCC)
+                throw new Exception($"rknn_run failed: {RknnNative.GetErrorMessage(ret)}");
+
+            // 4️⃣ 获取输出数量
+            RknnNative.rknn_input_output_num ioNum = new RknnNative.rknn_input_output_num();
+            IntPtr ptrIO = Marshal.AllocHGlobal(Marshal.SizeOf(ioNum));
+            ret = RknnNative.rknn_query(_rknnCtx, RknnNative.rknn_query_cmd.RKNN_QUERY_IN_OUT_NUM, ptrIO, (uint)Marshal.SizeOf(ioNum));
+            ioNum = Marshal.PtrToStructure<RknnNative.rknn_input_output_num>(ptrIO);
+            Marshal.FreeHGlobal(ptrIO);
+
+            int nOutput = (int)ioNum.n_output;
+
+            // 5️⃣ 获取输出属性
+            RknnNative.rknn_tensor_attr[] outputAttrs = new RknnNative.rknn_tensor_attr[nOutput];
+            int attrSize = Marshal.SizeOf(typeof(RknnNative.rknn_tensor_attr));
+            IntPtr ptrAttr = Marshal.AllocHGlobal(attrSize * nOutput);
+            ret = RknnNative.rknn_query(_rknnCtx, RknnNative.rknn_query_cmd.RKNN_QUERY_OUTPUT_ATTR, ptrAttr, (uint)(attrSize * nOutput));
+            for (int i = 0; i < nOutput; i++)
+                outputAttrs[i] = Marshal.PtrToStructure<RknnNative.rknn_tensor_attr>(IntPtr.Add(ptrAttr, i * attrSize));
+            Marshal.FreeHGlobal(ptrAttr);
+
+            // 6️⃣ 获取输出数据
+            var outputs = new RknnNative.rknn_output[nOutput];
+            var outputExtend = new RknnNative.rknn_output_extend { frame_id = runExtend.frame_id };
+            for (int i = 0; i < nOutput; i++)
             {
-                Marshal.FreeHGlobal(outBuffer);
+                outputs[i].want_float = 1;
+                outputs[i].is_prealloc = 0;
+            }
+
+            ret = RknnNative.rknn_outputs_get(_rknnCtx, (uint)nOutput, outputs, ref outputExtend, 0);
+            if (ret != RknnNative.RKNN_SUCC)
                 throw new Exception($"rknn_outputs_get failed: {RknnNative.GetErrorMessage(ret)}");
-            }
 
-            // 解析输出 float[]
-            int outCount;
-            float[] output;
+            // 7️⃣ 假设单输出，float32，shape (5,N)
+            int nBoxes = (int)outputs[0].size / sizeof(float) / 5;
+            float[] pred = new float[5 * nBoxes];
+            Marshal.Copy(outputs[0].buf, pred, 0, pred.Length);
 
-            if (outAttr.type == RknnNative.rknn_tensor_type.RKNN_TENSOR_FLOAT16)
-            {
-                outCount = (int)(outAttr.size / 2);
-                byte[] tmpBytes = new byte[outAttr.size];
-                Marshal.Copy(outBuffer, tmpBytes, 0, tmpBytes.Length);
-                output = new float[outCount];
-                for (int i = 0; i < outCount; i++)
-                {
-                    ushort half = (ushort)(tmpBytes[i * 2] | (tmpBytes[i * 2 + 1] << 8));
-                    output[i] = HalfToFloat(half);
-                }
-            }
-            else if (outAttr.type == RknnNative.rknn_tensor_type.RKNN_TENSOR_FLOAT32)
-            {
-                outCount = (int)(outAttr.size / 4);
-                output = new float[outCount];
-                Marshal.Copy(outBuffer, output, 0, outCount);
-            }
-            else if (outAttr.type == RknnNative.rknn_tensor_type.RKNN_TENSOR_UINT8)
-            {
-                outCount = (int)outAttr.size;
-                byte[] tmp = new byte[outCount];
-                Marshal.Copy(outBuffer, tmp, 0, outCount);
-                output = new float[outCount];
-                for (int i = 0; i < outCount; i++) output[i] = tmp[i] / 255f;
-            }
-            else
-            {
-                Marshal.FreeHGlobal(outBuffer);
-                throw new Exception($"Unsupported output type: {outAttr.type}");
-            }
+            RknnNative.rknn_outputs_release(_rknnCtx, (uint)nOutput, outputs);
 
-            Marshal.FreeHGlobal(outBuffer);
-
-            // 调试输出
-            Console.WriteLine("[DEBUG] Output first 10 values:");
-            for (int i = 0; i < Math.Min(10, output.Length); i++)
-                Console.WriteLine($"output[{i}] = {output[i]}");
-
-            // 解析 boxes
-            int numBoxes = output.Length / 5;
+            // 8️⃣ 后处理
             var boxes = new List<Box>();
-            float scale = Math.Min((float)dstSize / srcW, (float)dstSize / srcH);
-            float offsetX = (dstSize - srcW * scale) / 2;
-            float offsetY = (dstSize - srcH * scale) / 2;
-
-            for (int i = 0; i < numBoxes; i++)
+            for (int i = 0; i < nBoxes; i++)
             {
-                float cx = output[i * 5 + 0];
-                float cy = output[i * 5 + 1];
-                float w = output[i * 5 + 2];
-                float h = output[i * 5 + 3];
-                float conf = output[i * 5 + 4];
+                float conf = pred[4 * nBoxes + i]; // conf
+                if (conf < confThreshold) continue;
 
-                if (float.IsNaN(conf) || float.IsInfinity(conf) || conf < confThreshold)
-                    continue;
+                float cx = pred[0 * nBoxes + i];
+                float cy = pred[1 * nBoxes + i];
+                float w = pred[2 * nBoxes + i];
+                float h = pred[3 * nBoxes + i];
 
                 float x1 = (cx - w / 2 - offsetX) / scale;
                 float y1 = (cy - h / 2 - offsetY) / scale;
@@ -278,19 +148,67 @@ namespace yoloNetv2
                 boxes.Add(new Box { X1 = x1, Y1 = y1, X2 = x2, Y2 = y2, Score = conf, ClassId = 0 });
             }
 
-            // NMS 去重
-            var nmsList = new List<Box>();
+            // 9️⃣ NMS
+            return NMS(boxes, iouThreshold).ToArray();
+        }
+
+        // ====== Letterbox + 最近邻 + NHWC float32 ======
+        private static (float[] data, float scale, int offsetX, int offsetY) LetterboxAndConvert(SKBitmap bmp, int dstSize)
+        {
+            int srcW = bmp.Width;
+            int srcH = bmp.Height;
+            float scale = Math.Min((float)dstSize / srcW, (float)dstSize / srcH);
+            int newW = (int)(srcW * scale);
+            int newH = (int)(srcH * scale);
+            int offsetX = (dstSize - newW) / 2;
+            int offsetY = (dstSize - newH) / 2;
+
+            float[] data = new float[dstSize * dstSize * 3];
+
+            using (var pixmap = bmp.PeekPixels())
+            {
+                for (int y = 0; y < newH; y++)
+                {
+                    int srcY = (int)(y / scale);
+                    for (int x = 0; x < newW; x++)
+                    {
+                        int srcX = (int)(x / scale);
+                        SKColor c = pixmap.GetPixelColor(srcX, srcY);
+                        int idx = ((y + offsetY) * dstSize + (x + offsetX)) * 3;
+                        data[idx + 0] = c.Red / 255f;
+                        data[idx + 1] = c.Green / 255f;
+                        data[idx + 2] = c.Blue / 255f;
+                    }
+                }
+            }
+            return (data, scale, offsetX, offsetY);
+        }
+
+        // ====== 简单 NMS ======
+        private static List<Box> NMS(List<Box> boxes, float iouThres)
+        {
+            var keep = new List<Box>();
             var sorted = boxes.OrderByDescending(b => b.Score).ToList();
             while (sorted.Count > 0)
             {
                 var best = sorted[0];
-                nmsList.Add(best);
+                keep.Add(best);
                 sorted.RemoveAt(0);
-                sorted = sorted.Where(b => IoU(best, b) < iouThreshold).ToList();
+                sorted = sorted.Where(b => IoU(best, b) < iouThres).ToList();
             }
+            return keep;
+        }
 
-            Console.WriteLine(nmsList.Count > 0 ? $"检测到 {nmsList.Count} 个目标" : "未检测到目标");
-            return nmsList.ToArray();
+        private static float IoU(Box a, Box b)
+        {
+            float x1 = Math.Max(a.X1, b.X1);
+            float y1 = Math.Max(a.Y1, b.Y1);
+            float x2 = Math.Min(a.X2, b.X2);
+            float y2 = Math.Min(a.Y2, b.Y2);
+            float inter = Math.Max(0, x2 - x1) * Math.Max(0, y2 - y1);
+            float areaA = (a.X2 - a.X1) * (a.Y2 - a.Y1);
+            float areaB = (b.X2 - b.X1) * (b.Y2 - b.Y1);
+            return inter / (areaA + areaB - inter + 1e-6f);
         }
     }
 }

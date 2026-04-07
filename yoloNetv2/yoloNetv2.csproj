@@ -15,6 +15,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Remove="librknnrt.so" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="librknnrt.so">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="11.3.4" />
 		<PackageReference Include="Avalonia.Desktop" Version="11.3.4" />
 		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.4" />
