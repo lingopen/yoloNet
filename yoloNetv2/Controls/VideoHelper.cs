@@ -157,25 +157,47 @@ namespace yoloNetv2.Controls
                             {
                                 // 🔹 模型训练输入尺寸
                                 int modelInputSize = width; // 或 640，跟你的 yolo11n.pt 训练尺寸保持一致
-                                var tensor = OnnxHelper.FillTensorWithLetterbox(rgbPixels, srcW, srcH, modelInputSize);
-
-                                var onnxInput = NamedOnnxValue.CreateFromTensor("images", tensor);
-                                using var results = _session.Run(new[] { onnxInput });
-                                var boxes = OnnxHelper.ParseYoloOutputForNoClass(results, srcW, srcH, modelInputSize);
-
-                                if (boxes.Any())
+                                if (OperatingSystem.IsWindows())
                                 {
-                                    _lastDetectedFaces.Clear();
-                                    foreach (var box in boxes)
+                                    var tensor = OnnxHelper.FillTensorWithLetterbox(rgbPixels, srcW, srcH, modelInputSize);
+
+                                    var onnxInput = NamedOnnxValue.CreateFromTensor("images", tensor);
+                                    using var results = _session.Run(new[] { onnxInput });
+                                    var boxes = OnnxHelper.ParseYoloOutputForNoClass(results, srcW, srcH, modelInputSize);
+
+                                    if (boxes.Any())
                                     {
-                                        _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
+                                        _lastDetectedFaces.Clear();
+                                        foreach (var box in boxes)
+                                        {
+                                            _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
+                                        }
+                                        _lastDetectedScore = $"最高 {boxes.Max(p => p.Score).ToString("N2")} 最低 {boxes.Min(p => p.Score).ToString("N2")} 检测到 {boxes.Count()}个 耗时 {_yoloStopwatch.ElapsedMilliseconds}ms";
                                     }
-                                    _lastDetectedScore = $"最高 {boxes.Max(p => p.Score).ToString("N2")} 最低 {boxes.Min(p => p.Score).ToString("N2")} 检测到 {boxes.Count()}个 耗时 {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                    else
+                                    {
+                                        _lastDetectedFaces.Clear();
+                                        _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                    }
                                 }
                                 else
                                 {
-                                    _lastDetectedFaces.Clear();
-                                    _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                    var boxes = RKNNHelper.Run(sourceBitmap, modelInputSize);
+                                    if (boxes != null && boxes.Length > 0)
+                                    {
+
+                                        _lastDetectedFaces.Clear();
+                                        foreach (var box in boxes)
+                                        {
+                                            _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
+                                        }
+                                        _lastDetectedScore = $"最高 {boxes.Max(p => p.Score):N2} 最低 {boxes.Min(p => p.Score):N2} 检测到 {boxes.Length} 个 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                    }
+                                    else
+                                    {
+                                        _lastDetectedFaces.Clear();
+                                        _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                    }
                                 }
                             }
                             catch (Exception ex)
@@ -258,19 +280,34 @@ namespace yoloNetv2.Controls
                 // 🔹 加载 ONNX 模型
                 if (!string.IsNullOrEmpty(onnxPath))
                 {
-                    var options = new SessionOptions();
-                    try
+                    if (OperatingSystem.IsWindows())
                     {
-                        options.AppendExecutionProvider_CPU();
-                        //options.AppendExecutionProvider_CUDA(1);
-                        Console.WriteLine("CUDA Execution Provider added successfully.");
+                        var options = new SessionOptions();
+                        try
+                        {
+                            options.AppendExecutionProvider_CPU();
+                            //options.AppendExecutionProvider_CUDA(1);
+                            Console.WriteLine("CUDA Execution Provider added successfully.");
+                        }
+                        catch (OnnxRuntimeException ex)
+                        {
+                            Console.WriteLine("CUDA Execution Provider failed: " + ex.Message);
+                            Console.WriteLine("Fallback to CPU.");
+                        }
+                        _session = new InferenceSession(onnxPath, options);
                     }
-                    catch (OnnxRuntimeException ex)
+                    else
                     {
-                        Console.WriteLine("CUDA Execution Provider failed: " + ex.Message);
-                        Console.WriteLine("Fallback to CPU.");
+                        try
+                        {
+                            RKNNHelper.Init(onnxPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("RKNN Init failed: " + ex.Message);
+                            return false;
+                        }
                     }
-                    _session = new InferenceSession(onnxPath, options);
                 }
 
                 if (UICanvas == null || Device == null || Characteristics == null) return false;
@@ -299,8 +336,12 @@ namespace yoloNetv2.Controls
         {
             try
             {
+                if (!OperatingSystem.IsWindows())
+                {
+                    RKNNHelper.Release();
+                }
 
-                _fpsStopwatch.Stop();
+                    _fpsStopwatch.Stop();
                 _yoloStopwatch.Stop();
                 if (_captureDevice == null) return;
                 await _captureDevice.StopAsync();

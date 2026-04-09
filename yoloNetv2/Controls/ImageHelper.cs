@@ -223,20 +223,20 @@ namespace yoloNetv2.Controls
                             // 🔹 推理
                             var boxes = RKNNHelper.Run(sourceBitmap, modelInputSize, confThreshold, iouThreshold);
                             // 🔹 打印 boxes 日志
-                            if (boxes != null && boxes.Length > 0)
-                            {
-                                Console.WriteLine($"检测到 {boxes.Length} 个目标：");
-                                for (int i = 0; i < boxes.Length; i++)
-                                {
-                                    var b = boxes[i];
-                                    Console.WriteLine(
-                                        $"Box[{i}] - X1:{b.X1:F2}, Y1:{b.Y1:F2}, X2:{b.X2:F2}, Y2:{b.Y2:F2}, Score:{b.Score:F3}, ClassId:{b.ClassId}");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("未检测到目标");
-                            }
+                            //if (boxes != null && boxes.Length > 0)
+                            //{
+                            //    Console.WriteLine($"检测到 {boxes.Length} 个目标：");
+                            //    for (int i = 0; i < boxes.Length; i++)
+                            //    {
+                            //        var b = boxes[i];
+                            //        Console.WriteLine(
+                            //            $"Box[{i}] - X1:{b.X1:F2}, Y1:{b.Y1:F2}, X2:{b.X2:F2}, Y2:{b.Y2:F2}, Score:{b.Score:F3}, ClassId:{b.ClassId}");
+                            //    }
+                            //}
+                            //else
+                            //{
+                            //    Console.WriteLine("未检测到目标");
+                            //}
 
                             if (boxes != null && boxes.Length > 0)
                             {
