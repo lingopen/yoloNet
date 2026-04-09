@@ -99,14 +99,14 @@ namespace yoloNetv2
 
             int nOutput = (int)ioNum.n_output;
 
-            // 5️⃣ 获取输出属性
-            RknnNative.rknn_tensor_attr[] outputAttrs = new RknnNative.rknn_tensor_attr[nOutput];
-            int attrSize = Marshal.SizeOf(typeof(RknnNative.rknn_tensor_attr));
-            IntPtr ptrAttr = Marshal.AllocHGlobal(attrSize * nOutput);
-            ret = RknnNative.rknn_query(_rknnCtx, RknnNative.rknn_query_cmd.RKNN_QUERY_OUTPUT_ATTR, ptrAttr, (uint)(attrSize * nOutput));
-            for (int i = 0; i < nOutput; i++)
-                outputAttrs[i] = Marshal.PtrToStructure<RknnNative.rknn_tensor_attr>(IntPtr.Add(ptrAttr, i * attrSize));
-            Marshal.FreeHGlobal(ptrAttr);
+            //// 5️⃣ 获取输出属性
+            //RknnNative.rknn_tensor_attr[] outputAttrs = new RknnNative.rknn_tensor_attr[nOutput];
+            //int attrSize = Marshal.SizeOf(typeof(RknnNative.rknn_tensor_attr));
+            //IntPtr ptrAttr = Marshal.AllocHGlobal(attrSize * nOutput);
+            //ret = RknnNative.rknn_query(_rknnCtx, RknnNative.rknn_query_cmd.RKNN_QUERY_OUTPUT_ATTR, ptrAttr, (uint)(attrSize * nOutput));
+            //for (int i = 0; i < nOutput; i++)
+            //    outputAttrs[i] = Marshal.PtrToStructure<RknnNative.rknn_tensor_attr>(IntPtr.Add(ptrAttr, i * attrSize));
+            //Marshal.FreeHGlobal(ptrAttr);
 
             // 6️⃣ 获取输出数据
             var outputs = new RknnNative.rknn_output[nOutput];

@@ -62,6 +62,7 @@ namespace yoloNetv2.Controls
         // 🔹 YOLO 推理
         private static InferenceSession? _session = null;
         private static int isInferencingFlag = 0;
+        static bool _rknnInitialized = false;
 
         // 🔹 上一次检测结果
         private static List<Rect> _lastDetectedFaces = new List<Rect>();
@@ -86,6 +87,8 @@ namespace yoloNetv2.Controls
         static SKBitmap? sourceBitmap = null;
         static int width = 0;
         static int height = 0;
+        private static readonly object _rknnLock = new object();
+        private static SKBitmap? _latestFrame = null;
         /// <summary>
         /// 相机回调
         /// </summary>
@@ -116,88 +119,169 @@ namespace yoloNetv2.Controls
                     _pixelBuffer = new byte[width * height * 4];
 
                 }
-
-                // 🔹 读取像素数据到 _pixelBuffer
-                using (var pix = sourceBitmap.PeekPixels())
+                if (OperatingSystem.IsWindows())
                 {
-                    Marshal.Copy(pix.GetPixels(), _pixelBuffer!, 0, _pixelBuffer!.Length);
-
-                    // 🔹 抽帧保存
-                    if (_interval > 0)
+                    // 🔹 读取像素数据到 _pixelBuffer
+                    using (var pix = sourceBitmap.PeekPixels())
                     {
-                        _frameCounter++;
-                        if (_frameCounter % (int)_interval == 0)
+                        Marshal.Copy(pix.GetPixels(), _pixelBuffer!, 0, _pixelBuffer!.Length);
+
+                        // 🔹 抽帧保存
+                        if (_interval > 0)
                         {
-                            var copy = sourceBitmap.Copy();
+                            _frameCounter++;
+                            if (_frameCounter % (int)_interval == 0)
+                            {
+                                var copy = sourceBitmap.Copy();
+                                _ = Task.Run(() =>
+                                {
+                                    _saveCount++;
+                                    copy?.SaveFrame(_saveCount);
+                                    copy?.Dispose();
+                                });
+                            }
+                        }
+
+                        // 🔹 异步 YOLO 推理，每帧独立 Tensor 避免多线程冲突
+                        if (_session != null && Interlocked.CompareExchange(ref isInferencingFlag, 1, 0) == 0)
+                        {
+                            _yoloStopwatch.Restart();
+                            int srcW, srcH;
+                            // 假设 bufferScope.Buffer 获取到 RGB byte[]，长度 = width * height * 3
+                            byte[] rgbPixels = OnnxHelper.DecodeJpegToRGB(sourceBitmap, out srcW, out srcH);
+                            if (rgbPixels == null || rgbPixels.Length == 0)
+                            {
+                                Interlocked.Exchange(ref isInferencingFlag, 0);
+                                return;
+                            }
                             _ = Task.Run(() =>
                             {
-                                _saveCount++;
-                                copy?.SaveFrame(_saveCount);
-                                copy?.Dispose();
+
+                                try
+                                {
+                                    // 🔹 模型训练输入尺寸
+                                    int modelInputSize = width; // 或 640，跟你的 yolo11n.pt 训练尺寸保持一致
+                                    if (OperatingSystem.IsWindows())
+                                    {
+                                        var tensor = OnnxHelper.FillTensorWithLetterbox(rgbPixels, srcW, srcH, modelInputSize);
+
+                                        var onnxInput = NamedOnnxValue.CreateFromTensor("images", tensor);
+                                        using var results = _session.Run(new[] { onnxInput });
+                                        var boxes = OnnxHelper.ParseYoloOutputForNoClass(results, srcW, srcH, modelInputSize);
+
+                                        if (boxes.Any())
+                                        {
+                                            _lastDetectedFaces.Clear();
+                                            foreach (var box in boxes)
+                                            {
+                                                _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
+                                            }
+                                            _lastDetectedScore = $"最高 {boxes.Max(p => p.Score).ToString("N2")} 最低 {boxes.Min(p => p.Score).ToString("N2")} 检测到 {boxes.Count()}个 耗时 {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                        }
+                                        else
+                                        {
+                                            _lastDetectedFaces.Clear();
+                                            _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var boxes = RKNNHelper.Run(sourceBitmap, modelInputSize);
+                                        if (boxes != null && boxes.Length > 0)
+                                        {
+
+                                            _lastDetectedFaces.Clear();
+                                            foreach (var box in boxes)
+                                            {
+                                                _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
+                                            }
+                                            _lastDetectedScore = $"最高 {boxes.Max(p => p.Score):N2} 最低 {boxes.Min(p => p.Score):N2} 检测到 {boxes.Length} 个 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                        }
+                                        else
+                                        {
+                                            _lastDetectedFaces.Clear();
+                                            _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"推理异常: {ex.Message}");
+                                }
+                                finally
+                                {
+                                    Interlocked.Exchange(ref isInferencingFlag, 0);
+                                }
+
                             });
                         }
                     }
-
-                    // 🔹 异步 YOLO 推理，每帧独立 Tensor 避免多线程冲突
-                    if (_session != null && Interlocked.CompareExchange(ref isInferencingFlag, 1, 0) == 0)
+                }
+                else
+                {
+                    // 🔹 读取像素数据到 _pixelBuffer
+                    using (var pix = sourceBitmap.PeekPixels())
                     {
-                        _yoloStopwatch.Restart();
-                        int srcW, srcH;
-                        // 假设 bufferScope.Buffer 获取到 RGB byte[]，长度 = width * height * 3
-                        byte[] rgbPixels = OnnxHelper.DecodeJpegToRGB(sourceBitmap, out srcW, out srcH);
-                        if (rgbPixels == null || rgbPixels.Length == 0)
+                        Marshal.Copy(pix.GetPixels(), _pixelBuffer!, 0, _pixelBuffer!.Length);
+                    }
+                    // =========================
+                    // ✅ 修改1：只保存最新帧（线程安全）
+                    // =========================
+                    if (_rknnInitialized)
+                    {
+                        var copy = sourceBitmap.Copy(); // ✅ 必须拷贝
+
+                        lock (_rknnLock)
                         {
-                            Interlocked.Exchange(ref isInferencingFlag, 0);
-                            return;
+                            _latestFrame?.Dispose(); // 丢弃旧帧
+                            _latestFrame = copy;
                         }
-                        _ = Task.Run(() =>
+                    }
+
+                    // =========================
+                    // ✅ 修改2：单线程推理（无 Task.Run）
+                    // =========================
+                    if (_rknnInitialized && Interlocked.CompareExchange(ref isInferencingFlag, 1, 0) == 0)
+                    {
+                        SKBitmap? frame = null;
+
+                        lock (_rknnLock)
                         {
+                            if (_latestFrame != null)
+                            {
+                                frame = _latestFrame;
+                                _latestFrame = null; // 取走
+                            }
+                        }
+
+                        if (frame != null)
+                        {
+                            _yoloStopwatch.Restart();
 
                             try
                             {
-                                // 🔹 模型训练输入尺寸
-                                int modelInputSize = width; // 或 640，跟你的 yolo11n.pt 训练尺寸保持一致
-                                if (OperatingSystem.IsWindows())
-                                {
-                                    var tensor = OnnxHelper.FillTensorWithLetterbox(rgbPixels, srcW, srcH, modelInputSize);
+                                int modelInputSize = width;
 
-                                    var onnxInput = NamedOnnxValue.CreateFromTensor("images", tensor);
-                                    using var results = _session.Run(new[] { onnxInput });
-                                    var boxes = OnnxHelper.ParseYoloOutputForNoClass(results, srcW, srcH, modelInputSize);
+                                // ✅ 核心：只在这里调用 RKNN（单线程）
+                                var boxes = RKNNHelper.Run(frame, modelInputSize);
 
-                                    if (boxes.Any())
+                                if (boxes != null && boxes.Length > 0)
+                                { 
+
+                                    _lastDetectedFaces.Clear();
+                                    foreach (var box in boxes)
                                     {
-                                        _lastDetectedFaces.Clear();
-                                        foreach (var box in boxes)
-                                        {
-                                            _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
-                                        }
-                                        _lastDetectedScore = $"最高 {boxes.Max(p => p.Score).ToString("N2")} 最低 {boxes.Min(p => p.Score).ToString("N2")} 检测到 {boxes.Count()}个 耗时 {_yoloStopwatch.ElapsedMilliseconds}ms";
+                                        _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
                                     }
-                                    else
-                                    {
-                                        _lastDetectedFaces.Clear();
-                                        _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
-                                    }
+
+                                    _lastDetectedScore =
+                                        $"最高 {boxes.Max(p => p.Score):N2} 最低 {boxes.Min(p => p.Score):N2} 检测到 {boxes.Length} 个 | {_yoloStopwatch.ElapsedMilliseconds}ms";
                                 }
                                 else
                                 {
-                                    var boxes = RKNNHelper.Run(sourceBitmap, modelInputSize);
-                                    if (boxes != null && boxes.Length > 0)
-                                    {
-
-                                        _lastDetectedFaces.Clear();
-                                        foreach (var box in boxes)
-                                        {
-                                            _lastDetectedFaces.Add(new Rect(box.X1, box.Y1, box.X2 - box.X1, box.Y2 - box.Y1));
-                                        }
-                                        _lastDetectedScore = $"最高 {boxes.Max(p => p.Score):N2} 最低 {boxes.Min(p => p.Score):N2} 检测到 {boxes.Length} 个 | {_yoloStopwatch.ElapsedMilliseconds}ms";
-                                    }
-                                    else
-                                    {
-                                        _lastDetectedFaces.Clear();
-                                        _lastDetectedScore = $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
-                                    }
+                                    _lastDetectedFaces.Clear();
+                                    _lastDetectedScore =
+                                        $"未检测到目标 | {_yoloStopwatch.ElapsedMilliseconds}ms";
                                 }
                             }
                             catch (Exception ex)
@@ -206,10 +290,15 @@ namespace yoloNetv2.Controls
                             }
                             finally
                             {
+                                frame.Dispose(); // ✅ 必须释放
                                 Interlocked.Exchange(ref isInferencingFlag, 0);
                             }
-
-                        });
+                        }
+                        else
+                        {
+                            // 没有帧也要释放锁标志
+                            Interlocked.Exchange(ref isInferencingFlag, 0);
+                        }
                     }
                 }
             }
@@ -301,6 +390,7 @@ namespace yoloNetv2.Controls
                         try
                         {
                             RKNNHelper.Init(onnxPath);
+                            _rknnInitialized = true;
                         }
                         catch (Exception ex)
                         {
@@ -339,9 +429,10 @@ namespace yoloNetv2.Controls
                 if (!OperatingSystem.IsWindows())
                 {
                     RKNNHelper.Release();
+                    _rknnInitialized = false;
                 }
 
-                    _fpsStopwatch.Stop();
+                _fpsStopwatch.Stop();
                 _yoloStopwatch.Stop();
                 if (_captureDevice == null) return;
                 await _captureDevice.StopAsync();
