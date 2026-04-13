@@ -104,6 +104,14 @@
                 FontFamily="{StaticResource iconfont}"
                 FontSize="24"
                 Foreground="White" />
+               <Button
+                VerticalAlignment="Center"
+                Background="Red"
+                Command="{Binding RemoveCurrentImageCommand}"
+                Content="&#xe6a6;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
         </StackPanel>
 
         <!--  状态栏区域  -->

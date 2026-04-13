@@ -1,13 +1,14 @@
-﻿using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Media.Imaging;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using yoloNetv2.Models;
 
 namespace yoloNetv2.ViewModels
@@ -33,7 +34,8 @@ namespace yoloNetv2.ViewModels
 
         public ObservableCollection<string> Classes { get; } = new()
         {
-            "normal",
+            "red",
+            "green"
         };
 
         public ObservableCollection<Annotation> Annotations { get; } = new();
@@ -66,7 +68,7 @@ namespace yoloNetv2.ViewModels
         }
         public void LoadCurrentImage()
         {
-            if (CurrentIndex == 0)//返回第一张先刷新一下
+            if (CurrentIndex <= 0)//返回第一张先刷新一下
                 LoadAllImage();
             if (_imageFiles == null || _imageFiles.Length == 0) return;
             CurrentImage = new Bitmap(_imageFiles[CurrentIndex]);
@@ -75,6 +77,10 @@ namespace yoloNetv2.ViewModels
             OnPropertyChanged(nameof(ImageWidth));
             OnPropertyChanged(nameof(ImageHeight));
             Msg = _imageFiles[CurrentIndex];
+
+
+            LoadAnnotation();
+
 
             // 调用 View 进行重绘
             RequestInvalidate?.Invoke();
@@ -90,6 +96,7 @@ namespace yoloNetv2.ViewModels
             else
                 CurrentIndex = (CurrentIndex + istep) % _imageFiles.Length;
             LoadCurrentImage();
+           
         }
 
         [RelayCommand]
@@ -101,6 +108,55 @@ namespace yoloNetv2.ViewModels
                 CurrentIndex = 0;
             else CurrentIndex = (CurrentIndex - istep + _imageFiles.Length) % _imageFiles.Length;
             LoadCurrentImage();
+        }
+
+        private void LoadAnnotation()
+        {
+            if (_imageFiles == null || _imageFiles.Length == 0 || CurrentImage == null)
+                return;
+
+            string imgPath = _imageFiles[CurrentIndex];
+
+            string labelFolder = Path.Combine("dataset", "labels", "train");
+            string fileName = Path.GetFileNameWithoutExtension(imgPath);
+            string txtPath = Path.Combine(labelFolder, fileName + ".txt");
+
+            Annotations.Clear();
+
+            if (!File.Exists(txtPath))
+            {
+                RequestInvalidate?.Invoke();
+                return;
+            }
+
+            double imgW = CurrentImage.PixelSize.Width;
+            double imgH = CurrentImage.PixelSize.Height;
+
+            var lines = File.ReadAllLines(txtPath);
+
+            foreach (var line in lines)
+            {
+                var parts = line.Split(' ');
+                if (parts.Length != 5) continue;
+
+                int classId = int.Parse(parts[0]);
+                double xCenter = double.Parse(parts[1]);
+                double yCenter = double.Parse(parts[2]);
+                double w = double.Parse(parts[3]);
+                double h = double.Parse(parts[4]);
+
+                // 🔥 YOLO → 像素坐标（与你保存完全反向）
+                double px = (xCenter - w / 2) * imgW;
+                double py = (yCenter - h / 2) * imgH;
+                double pw = w * imgW;
+                double ph = h * imgH;
+
+                Annotations.Add(new Annotation
+                {
+                    ClassId = classId,
+                    BoundingBox = new Rect(px, py, pw, ph)
+                });
+            } 
         }
 
         [RelayCommand]
@@ -152,6 +208,46 @@ namespace yoloNetv2.ViewModels
 
                 // 刷新 Canvas
                 RequestInvalidate?.Invoke();
+            }
+        }
+
+        [RelayCommand]
+        private void RemoveCurrentImage()
+        {
+            if (_imageFiles == null || _imageFiles.Length == 0)
+                return;
+
+            string imgPath = _imageFiles[CurrentIndex];
+
+            string labelPath = imgPath
+                .Replace("\\images\\", "\\labels\\")
+                .Replace("/images/", "/labels/")
+                .Replace(".jpg", ".txt")
+                .Replace(".png", ".txt");
+
+            string emptyImgDir = Path.Combine("dataset", "images", "empty");
+            string emptyLabelDir = Path.Combine("dataset", "labels", "empty");
+
+            Directory.CreateDirectory(emptyImgDir);
+            Directory.CreateDirectory(emptyLabelDir);
+
+            try
+            {
+                File.Move(imgPath, Path.Combine(emptyImgDir, Path.GetFileName(imgPath)), true);
+
+                if (File.Exists(labelPath))
+                    File.Move(labelPath, Path.Combine(emptyLabelDir, Path.GetFileName(labelPath)), true);
+
+                // 🔥 关键：重新加载
+                LoadAllImage();
+
+                LoadCurrentImage();
+                SelectedClass = Classes[0];
+                Msg = "已移动（并刷新列表）";
+            }
+            catch (Exception ex)
+            {
+                Msg = $"操作失败: {ex.Message}";
             }
         }
     }
