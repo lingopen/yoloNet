@@ -1,14 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36408.4
+# Visual Studio Version 18
+VisualStudioVersion = 18.7.11911.148 stable
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yoloNet.core", "yoloNet.core\yoloNet.core.csproj", "{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yoloNet", "yoloNet\yoloNet.csproj", "{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yoloNet.demo", "yoloNet.demo\yoloNet.demo.csproj", "{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "yoloNetv2", "yoloNetv2\yoloNetv2.csproj", "{C91FAF04-9026-6F00-66C9-C11922FEB591}"
 EndProject
 Global
@@ -19,30 +13,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Debug|x64.ActiveCfg = Debug|x64
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Debug|x64.Build.0 = Debug|x64
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Release|x64.ActiveCfg = Release|x64
-		{B4AA6D02-71D4-8EDB-C75F-9B7132A7626F}.Release|x64.Build.0 = Release|x64
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Debug|x64.ActiveCfg = Debug|x64
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Debug|x64.Build.0 = Debug|x64
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Release|x64.ActiveCfg = Release|x64
-		{BD6DE000-14E5-4F5A-D7C1-47428A2DD108}.Release|x64.Build.0 = Release|x64
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Debug|x64.Build.0 = Debug|Any CPU
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|x64.ActiveCfg = Release|Any CPU
-		{0D59BC32-9413-1C38-FFD4-5E9996CFFA8B}.Release|x64.Build.0 = Release|Any CPU
 		{C91FAF04-9026-6F00-66C9-C11922FEB591}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C91FAF04-9026-6F00-66C9-C11922FEB591}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C91FAF04-9026-6F00-66C9-C11922FEB591}.Debug|x64.ActiveCfg = Debug|x64
