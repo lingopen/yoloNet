@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Avalonia;
@@ -32,6 +33,27 @@ namespace yoloNetv2.ViewModels
         [ObservableProperty]
         private Rect? tempRect;  // 临时矩形，用于鼠标拖动实时显示
 
+        private const double MinZoomScale = 0.5;
+        private const double MaxZoomScale = 8.0;
+        private const double ZoomStep = 0.25;
+        private double _zoomScale = 2.0;
+
+        public double ZoomScale
+        {
+            get => _zoomScale;
+            set
+            {
+                var clamped = Math.Round(Math.Clamp(value, MinZoomScale, MaxZoomScale), 2);
+                if (SetProperty(ref _zoomScale, clamped))
+                {
+                    OnPropertyChanged(nameof(DisplayImageWidth));
+                    OnPropertyChanged(nameof(DisplayImageHeight));
+                    OnPropertyChanged(nameof(ZoomPercent));
+                    RequestInvalidate?.Invoke();
+                }
+            }
+        }
+
         public ObservableCollection<string> Classes { get; } = new()
         {
             "red",
@@ -42,6 +64,9 @@ namespace yoloNetv2.ViewModels
 
         public double ImageWidth => CurrentImage?.PixelSize.Width ?? 800;
         public double ImageHeight => CurrentImage?.PixelSize.Height ?? 600;
+        public double DisplayImageWidth => ImageWidth * ZoomScale;
+        public double DisplayImageHeight => ImageHeight * ZoomScale;
+        public string ZoomPercent => $"{ZoomScale * 100:0}%";
 
         public MarkViewModel()
         {
@@ -76,6 +101,8 @@ namespace yoloNetv2.ViewModels
             TempRect = null;
             OnPropertyChanged(nameof(ImageWidth));
             OnPropertyChanged(nameof(ImageHeight));
+            OnPropertyChanged(nameof(DisplayImageWidth));
+            OnPropertyChanged(nameof(DisplayImageHeight));
             Msg = _imageFiles[CurrentIndex];
 
 
@@ -136,14 +163,14 @@ namespace yoloNetv2.ViewModels
 
             foreach (var line in lines)
             {
-                var parts = line.Split(' ');
+                var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length != 5) continue;
 
-                int classId = int.Parse(parts[0]);
-                double xCenter = double.Parse(parts[1]);
-                double yCenter = double.Parse(parts[2]);
-                double w = double.Parse(parts[3]);
-                double h = double.Parse(parts[4]);
+                int classId = int.Parse(parts[0], CultureInfo.InvariantCulture);
+                double xCenter = double.Parse(parts[1], CultureInfo.InvariantCulture);
+                double yCenter = double.Parse(parts[2], CultureInfo.InvariantCulture);
+                double w = double.Parse(parts[3], CultureInfo.InvariantCulture);
+                double h = double.Parse(parts[4], CultureInfo.InvariantCulture);
 
                 // 🔥 YOLO → 像素坐标（与你保存完全反向）
                 double px = (xCenter - w / 2) * imgW;
@@ -154,7 +181,7 @@ namespace yoloNetv2.ViewModels
                 Annotations.Add(new Annotation
                 {
                     ClassId = classId,
-                    BoundingBox = new Rect(px, py, pw, ph)
+                    BoundingBox = NormalizeAndClampImageRect(new Rect(px, py, pw, ph))
                 });
             } 
         }
@@ -171,18 +198,29 @@ namespace yoloNetv2.ViewModels
             string fileName = Path.GetFileNameWithoutExtension(imgPath);
             string txtPath = Path.Combine(labelFolder, fileName + ".txt");
 
+            double imgW = CurrentImage.PixelSize.Width;
+            double imgH = CurrentImage.PixelSize.Height;
+
             using var writer = new StreamWriter(txtPath);
             foreach (var ann in Annotations)
             {
-                double imgW = CurrentImage.PixelSize.Width;
-                double imgH = CurrentImage.PixelSize.Height;
+                var rect = NormalizeAndClampImageRect(ann.BoundingBox);
+                if (rect.Width <= 0 || rect.Height <= 0)
+                    continue;
 
-                double xCenter = (ann.BoundingBox.X + ann.BoundingBox.Width / 2) / imgW;
-                double yCenter = (ann.BoundingBox.Y + ann.BoundingBox.Height / 2) / imgH;
-                double w = ann.BoundingBox.Width / imgW;
-                double h = ann.BoundingBox.Height / imgH;
+                double xCenter = (rect.X + rect.Width / 2) / imgW;
+                double yCenter = (rect.Y + rect.Height / 2) / imgH;
+                double w = rect.Width / imgW;
+                double h = rect.Height / imgH;
 
-                writer.WriteLine($"{ann.ClassId} {xCenter:F6} {yCenter:F6} {w:F6} {h:F6}");
+                writer.WriteLine(string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} {1:F6} {2:F6} {3:F6} {4:F6}",
+                    ann.ClassId,
+                    xCenter,
+                    yCenter,
+                    w,
+                    h));
             }
             Msg = "保存标注成功!";
         }
@@ -193,9 +231,70 @@ namespace yoloNetv2.ViewModels
         public void AddAnnotation(Rect rect)
         {
             if (string.IsNullOrEmpty(SelectedClass)) return;
+            var imageRect = NormalizeAndClampImageRect(rect);
+            if (imageRect.Width <= 0 || imageRect.Height <= 0)
+                return;
+
             int classId = Classes.IndexOf(SelectedClass);
-            Annotations.Add(new Annotation { ClassId = classId, BoundingBox = rect });
-            Msg = $"添加标注成功,ClassId:{classId},rect:{rect.X},{rect.Y},{rect.Width},{rect.Height}!";
+            Annotations.Add(new Annotation { ClassId = classId, BoundingBox = imageRect });
+            Msg = $"添加标注成功,ClassId:{classId},rect:{imageRect.X},{imageRect.Y},{imageRect.Width},{imageRect.Height}!";
+            RequestInvalidate?.Invoke();
+        }
+
+        public Point DisplayToImagePoint(Point displayPoint)
+        {
+            var zoom = ZoomScale <= 0 ? 1.0 : ZoomScale;
+            return new Point(
+                Math.Clamp(displayPoint.X / zoom, 0, ImageWidth),
+                Math.Clamp(displayPoint.Y / zoom, 0, ImageHeight));
+        }
+
+        public Rect ImageToDisplayRect(Rect imageRect)
+        {
+            var rect = NormalizeAndClampImageRect(imageRect);
+            return new Rect(
+                rect.X * ZoomScale,
+                rect.Y * ZoomScale,
+                rect.Width * ZoomScale,
+                rect.Height * ZoomScale);
+        }
+
+        public void ZoomBy(double delta)
+        {
+            ZoomScale += delta;
+        }
+
+        [RelayCommand]
+        private void ZoomIn()
+        {
+            ZoomBy(ZoomStep);
+        }
+
+        [RelayCommand]
+        private void ZoomOut()
+        {
+            ZoomBy(-ZoomStep);
+        }
+
+        [RelayCommand]
+        private void ResetZoom()
+        {
+            ZoomScale = 1.0;
+        }
+
+        private Rect NormalizeAndClampImageRect(Rect rect)
+        {
+            var x1 = Math.Min(rect.X, rect.X + rect.Width);
+            var y1 = Math.Min(rect.Y, rect.Y + rect.Height);
+            var x2 = Math.Max(rect.X, rect.X + rect.Width);
+            var y2 = Math.Max(rect.Y, rect.Y + rect.Height);
+
+            x1 = Math.Clamp(x1, 0, ImageWidth);
+            y1 = Math.Clamp(y1, 0, ImageHeight);
+            x2 = Math.Clamp(x2, 0, ImageWidth);
+            y2 = Math.Clamp(y2, 0, ImageHeight);
+
+            return new Rect(x1, y1, Math.Max(0, x2 - x1), Math.Max(0, y2 - y1));
         }
 
         [RelayCommand]

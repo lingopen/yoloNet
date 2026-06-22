@@ -54,17 +54,32 @@ public partial class MarkView : UserControl
             _vm?.SaveAnnotationCommand.Execute(null);
             e.Handled = true;
         }
+        else if ((e.KeyModifiers & KeyModifiers.Control) == KeyModifiers.Control && (e.Key == Key.Add || e.Key == Key.OemPlus))
+        {
+            _vm?.ZoomInCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if ((e.KeyModifiers & KeyModifiers.Control) == KeyModifiers.Control && (e.Key == Key.Subtract || e.Key == Key.OemMinus))
+        {
+            _vm?.ZoomOutCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if ((e.KeyModifiers & KeyModifiers.Control) == KeyModifiers.Control && (e.Key == Key.D0 || e.Key == Key.NumPad0))
+        {
+            _vm?.ResetZoomCommand.Execute(null);
+            e.Handled = true;
+        }
     }
     private void OnCanvasPressed(object sender, PointerPressedEventArgs e)
     {
-        _startPoint = e.GetPosition(ImageCanvas);
+        _startPoint = _vm?.DisplayToImagePoint(e.GetPosition(ImageCanvas));
     }
 
     private void OnCanvasReleased(object sender, PointerReleasedEventArgs e)
     {
         if (_vm != null && _startPoint.HasValue)
         {
-            var end = e.GetPosition(ImageCanvas);
+            var end = _vm.DisplayToImagePoint(e.GetPosition(ImageCanvas));
             var rect = new Rect(_startPoint.Value, end);
             _vm.AddAnnotation(rect);
             _startPoint = null;
@@ -77,7 +92,7 @@ public partial class MarkView : UserControl
     {
         if (_vm != null && _startPoint.HasValue)
         {
-            var pos = e.GetPosition(ImageCanvas);
+            var pos = _vm.DisplayToImagePoint(e.GetPosition(ImageCanvas));
             _vm.TempRect = new Rect(_startPoint.Value, pos);
             ImageCanvas.InvalidateVisual();
         }

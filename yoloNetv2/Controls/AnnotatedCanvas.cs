@@ -20,7 +20,7 @@ namespace yoloNetv2.Controls
             {
                 context.DrawImage(ViewModel.CurrentImage, 
                     new Rect(0, 0, ViewModel.CurrentImage.PixelSize.Width, ViewModel.CurrentImage.PixelSize.Height),
-                    new Rect(0, 0, ViewModel.ImageWidth, ViewModel.ImageHeight));
+                    new Rect(0, 0, ViewModel.DisplayImageWidth, ViewModel.DisplayImageHeight));
 
                
             }
@@ -36,7 +36,8 @@ namespace yoloNetv2.Controls
                     _ => Brushes.White
                 };
                 var pen = new Pen(brush, 2);
-                context.DrawRectangle(null, pen, ann.BoundingBox);
+                var displayBox = ViewModel.ImageToDisplayRect(ann.BoundingBox);
+                context.DrawRectangle(null, pen, displayBox);
 
                 // =========================
                 // 🔥新增：绘制类别文字
@@ -54,11 +55,11 @@ namespace yoloNetv2.Controls
                 );
 
                 // 🔥新增：计算文字背景位置（防止超出顶部）
-                double textX = ann.BoundingBox.X;
-                double textY = ann.BoundingBox.Y - formattedText.Height;
+                double textX = displayBox.X;
+                double textY = displayBox.Y - formattedText.Height;
 
                 if (textY < 0)
-                    textY = ann.BoundingBox.Y;
+                    textY = displayBox.Y;
 
                 var textRect = new Rect(
                     textX,
@@ -78,7 +79,7 @@ namespace yoloNetv2.Controls
             if (ViewModel.TempRect.HasValue)
             {
                 var pen = new Pen(new SolidColorBrush(Colors.Yellow), 2, dashStyle: DashStyle.Dash);
-                context.DrawRectangle(null, pen, ViewModel.TempRect.Value);
+                context.DrawRectangle(null, pen, ViewModel.ImageToDisplayRect(ViewModel.TempRect.Value));
             }
         }
     } 

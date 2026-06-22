@@ -22,22 +22,26 @@
     </Design.DataContext>
 
     <Grid Background="Black" RowDefinitions="*,auto,auto">
-        <Border
-            Margin="2"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            BorderBrush="Gray"
-            BorderThickness="1">
-            <ctl:AnnotatedCanvas
-                x:Name="ImageCanvas"
-                Width="{Binding ImageWidth}"
-                Height="{Binding ImageHeight}"
+        <ScrollViewer
+            HorizontalScrollBarVisibility="Auto"
+            VerticalScrollBarVisibility="Auto">
+            <Border
+                Margin="2"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                PointerMoved="OnCanvasMoved"
-                PointerPressed="OnCanvasPressed"
-                PointerReleased="OnCanvasReleased" />
-        </Border>
+                BorderBrush="Gray"
+                BorderThickness="1">
+                <ctl:AnnotatedCanvas
+                    x:Name="ImageCanvas"
+                    Width="{Binding DisplayImageWidth}"
+                    Height="{Binding DisplayImageHeight}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    PointerMoved="OnCanvasMoved"
+                    PointerPressed="OnCanvasPressed"
+                    PointerReleased="OnCanvasReleased" />
+            </Border>
+        </ScrollViewer>
 
         <!--  底部控制区  -->
         <StackPanel
@@ -88,6 +92,41 @@
                 FontSize="24"
                 ItemsSource="{Binding Classes}"
                 SelectedItem="{Binding SelectedClass}" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ZoomOutCommand}"
+                Content="&#xe63b;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+            <Slider
+                Width="160"
+                Minimum="0.5"
+                Maximum="8"
+                TickFrequency="0.25"
+                Value="{Binding ZoomScale, Mode=TwoWay}" />
+            <TextBlock
+                Width="55"
+                VerticalAlignment="Center"
+                FontStyle="Oblique"
+                Foreground="Gold"
+                Text="{Binding ZoomPercent}" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ZoomInCommand}"
+                Content="&#xe63c;"
+                FontFamily="{StaticResource iconfont}"
+                FontSize="24"
+                Foreground="White" />
+            <Button
+                VerticalAlignment="Center"
+                Background="#0d6efd"
+                Command="{Binding ResetZoomCommand}"
+                Content="1:1"
+                FontSize="16"
+                Foreground="White" />
             <Button
                 VerticalAlignment="Center"
                 Background="#0d6efd"
